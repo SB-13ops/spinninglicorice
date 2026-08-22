@@ -2,7 +2,7 @@
 
 ## Real Concert Scout
 
-Burnt Jacket now includes a Ticketmaster Discovery API provider.
+SpinningLicorice now includes a Ticketmaster Discovery API provider.
 
 Scout uses:
 - Collector DNA artist affinities
@@ -56,7 +56,7 @@ Notifications are deduplicated so repeated refreshes do not create the same aler
 ## Home feed
 
 Home now promotes:
-- top Hunter opportunity as **Burnt Jacket Pick**
+- top Hunter opportunity as **SpinningLicorice Pick**
 - next-best Hunter results
 - top Concert Scout recommendation
 - recent Hunter/Scout alerts

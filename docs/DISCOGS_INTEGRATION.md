@@ -6,12 +6,12 @@ The API now includes the first real Discogs path:
 
 1. `GET /api/v1/integrations/discogs/connect`
 2. Open the returned `authorization_url`
-3. Authorize Burnt Jacket in Discogs
+3. Authorize SpinningLicorice in Discogs
 4. Discogs redirects to `/api/v1/integrations/discogs/callback`
-5. Burnt Jacket exchanges the OAuth verifier for an access token
+5. SpinningLicorice exchanges the OAuth verifier for an access token
 6. `POST /api/v1/integrations/discogs/sync`
 7. Collection folder `0` and Wantlist are paged through
-8. Releases are normalized into Burnt Jacket `albums`, `releases`, `artists`, mappings, collection items and wantlist items
+8. Releases are normalized into SpinningLicorice `albums`, `releases`, `artists`, mappings, collection items and wantlist items
 9. `GET /api/v1/collection` returns the imported collection
 
 ## Local setup
@@ -59,5 +59,5 @@ curl http://localhost:8000/api/v1/collection
 - Add sync-job/background-worker execution.
 - Handle API rate limits and retries explicitly.
 - Add detailed Discogs custom-field/condition mapping.
-- Improve album/master normalization so multiple pressings share the same Burnt Jacket album.
+- Improve album/master normalization so multiple pressings share the same SpinningLicorice album.
 - Add supported Discogs write-back operations.

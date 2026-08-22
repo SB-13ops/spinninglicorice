@@ -8,11 +8,11 @@ Hunter now works end-to-end with:
 - Hunt editing and deletion
 - provider-neutral marketplace listings
 - a demo marketplace adapter for local testing
-- Burnt Jacket Score V1
+- SpinningLicorice Score V1
 - explainable deal labels
 - interactive Hunter web UI
 
-## Burnt Jacket Score V1
+## SpinningLicorice Score V1
 
 Weights:
 

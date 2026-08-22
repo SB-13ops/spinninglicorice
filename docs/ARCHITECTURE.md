@@ -1,4 +1,4 @@
-# Burnt Jacket V1 Architecture
+# SpinningLicorice V1 Architecture
 
 ## Product loop
 
@@ -41,11 +41,11 @@ Hunt matches, value drops, wantlist deals and concert alerts.
 1. **Album != Release.**
    An album is the musical work/edition family. A release is a specific pressing/version.
 
-2. **Burnt Jacket owns its identifiers.**
-   External sources such as Discogs map onto Burnt Jacket records rather than becoming the primary database keys.
+2. **SpinningLicorice owns its identifiers.**
+   External sources such as Discogs map onto SpinningLicorice records rather than becoming the primary database keys.
 
 3. **Discogs is optional.**
-   Users can maintain a Burnt Jacket-native collection.
+   Users can maintain a SpinningLicorice-native collection.
 
 4. **AI does not own deterministic logic.**
    Ownership, price comparisons, conditions and hard Hunt criteria remain structured application logic.

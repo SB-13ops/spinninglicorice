@@ -1,6 +1,6 @@
 # Railway Environment Variables
 
-Every variable Burnt Jacket reads, which service it belongs to, and whether it's
+Every variable SpinningLicorice reads, which service it belongs to, and whether it's
 required. Variable names are taken directly from the code.
 
 Two app services need variables: **API** (`apps/api`) and **web** (`apps/web`).
@@ -77,7 +77,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 | `DISCOGS_CONSUMER_KEY` | For Discogs | From your Discogs developer app. |
 | `DISCOGS_CONSUMER_SECRET` | For Discogs | " |
 | `DISCOGS_CALLBACK_URL` | For Discogs | `https://<api-domain>/api/v1/integrations/discogs/callback` |
-| `DISCOGS_USER_AGENT` | Optional | Defaults to `Burnt Jacket/0.1`. |
+| `DISCOGS_USER_AGENT` | Optional | Defaults to `SpinningLicorice/0.1`. |
 
 ### Social login (Google / Facebook)
 
