@@ -5,21 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../lib/auth";
 import { API_BASE, apiPost } from "../../lib/api";
 
-/** A simple vinyl-record illustration in the app's own accent colors — no
- * external image asset needed, and it echoes the shareable Collector Card. */
-function VinylDisc() {
-  return (
-    <svg className="sl-disc" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="100" cy="100" r="98" fill="#201e1d" />
-      <circle cx="100" cy="100" r="78" fill="none" stroke="#f5ead8" strokeWidth="1.5" opacity="0.25" />
-      <circle cx="100" cy="100" r="58" fill="none" stroke="#f5ead8" strokeWidth="1.5" opacity="0.25" />
-      <circle cx="100" cy="100" r="38" fill="none" stroke="#f5ead8" strokeWidth="1.5" opacity="0.25" />
-      <circle cx="100" cy="100" r="26" fill="#c67139" />
-      <circle cx="100" cy="100" r="6" fill="#201e1d" />
-    </svg>
-  );
-}
-
 const ERRORS: Record<string, string> = {
   access_denied: "Sign-in was cancelled.",
   provider_error: "We couldn't complete sign-in with that provider. Please try again.",
@@ -180,7 +165,11 @@ function LoginInner() {
         <section className="sl-hero">
           <div className="sl-hero-blob" />
           <div className="sl-hero-text">
-            <VinylDisc />
+            <img
+              src="/spinninglicorice-badge.png"
+              alt="SpinningLicorice — records, music, connections"
+              className="sl-disc"
+            />
             <h1 className="sl-hero-h1">Your collection. Your hunt. Your music.</h1>
             <p className="sl-hero-sub">
               SpinningLicorice is the home for your vinyl — track what you own, hunt down what
@@ -247,8 +236,6 @@ function LoginInner() {
             </ul>
           </div>
         </section>
-
-        <div className="sl-photo-slot">Add a photo here — records, a shelf, or a show</div>
 
         <footer className="sl-footer">
           <span>© SpinningLicorice</span>
