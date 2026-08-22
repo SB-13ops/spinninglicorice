@@ -1,4 +1,4 @@
-# Burnt Jacket Pre-Launch Checklist
+# spinninglicorice Pre-Launch Checklist
 
 Everything is code-complete and tested in development. This checklist covers the
 steps only you can do — creating credentials, deploying, and smoke-testing the
