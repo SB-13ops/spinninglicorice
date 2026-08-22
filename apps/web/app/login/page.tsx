@@ -18,7 +18,7 @@ function LoginInner() {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="auth-logo">BURNT JACKET</div>
+        <div className="auth-logo">SPINNINGLICORICE</div>
         <div className="auth-tagline">Your collection. Your hunt. Your music.</div>
 
         {err && <div className="auth-error">{ERRORS[err] || "Sign-in failed. Please try again."}</div>}
@@ -31,7 +31,7 @@ function LoginInner() {
         </button>
 
         <div className="auth-fine">
-          By continuing you agree to Burnt Jacket&apos;s terms. We only use your name and
+          By continuing you agree to SpinningLicorice&apos;s terms. We only use your name and
           email to create your account.
         </div>
       </div>
