@@ -1,4 +1,4 @@
-"""Alembic migration environment for Burnt Jacket.
+"""Alembic migration environment for SpinningLicorice.
 
 This wires Alembic to the application's own configuration and metadata:
 
