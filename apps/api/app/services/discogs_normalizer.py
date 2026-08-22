@@ -4,7 +4,7 @@ from typing import Any
 
 
 def normalize_release_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    """Convert a Discogs release response into Burnt Jacket catalog fields."""
+    """Convert a Discogs release response into SpinningLicorice catalog fields."""
     artists = [
         {
             "name": artist.get("name"),

@@ -2,7 +2,7 @@
 own yet.
 
 Approach: for each artist you already own records by (ranked by how many you
-own), look at that artist's releases known to Burnt Jacket and surface the ones
+own), look at that artist's releases known to SpinningLicorice and surface the ones
 missing from your collection. This turns the collection into a to-hunt list.
 
 The universe of "their releases" is what's in our DB (imported via Discogs sync
@@ -52,7 +52,7 @@ def artist_completion(db: Session, user_id: uuid.UUID, *, max_artists: int = 8) 
 
     results = []
     for artist_id, artist_name, owned_count in artist_counts:
-        # All releases by this artist known to Burnt Jacket.
+        # All releases by this artist known to SpinningLicorice.
         known = db.execute(
             select(Release.id, Release.title, Release.release_year, Release.image_url)
             .join(ReleaseArtist, ReleaseArtist.release_id == Release.id)
