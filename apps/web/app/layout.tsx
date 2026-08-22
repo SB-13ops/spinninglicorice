@@ -4,7 +4,7 @@ import AppShell from "../components/AppShell";
 import Disclosure from "../components/Disclosure";
 
 export const metadata = {
-  title: "Burnt Jacket",
+  title: "SpinningLicorice",
   description: "Your collection. Your hunt. Your music.",
 };
 
