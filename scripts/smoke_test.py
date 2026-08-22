@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Burnt Jacket post-deploy smoke test.
+"""SpinningLicorice post-deploy smoke test.
 
-Walks the critical path against a *running* Burnt Jacket API and reports pass/fail
+Walks the critical path against a *running* SpinningLicorice API and reports pass/fail
 per check, with a non-zero exit code if anything critical fails. Use it right
 after a deploy to confirm the API is healthy and the core flows work.
 
@@ -203,7 +203,7 @@ class Runner:
 
     # -- run -----------------------------------------------------------------
     def run(self) -> int:
-        print(f"\nBurnt Jacket smoke test → {self.base}\n")
+        print(f"\nSpinningLicorice smoke test → {self.base}\n")
         if not self.check_health():
             print("\nAPI is unreachable; stopping.\n")
             return 1
@@ -232,7 +232,7 @@ class Runner:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Burnt Jacket post-deploy smoke test")
+    ap = argparse.ArgumentParser(description="SpinningLicorice post-deploy smoke test")
     ap.add_argument("--base-url", required=True, help="e.g. https://your-api.up.railway.app")
     ap.add_argument("--timeout", type=float, default=30.0)
     args = ap.parse_args()
