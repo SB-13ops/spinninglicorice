@@ -34,7 +34,7 @@ export default function LoginCallbackPage() {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <div className="auth-logo">BURNT JACKET</div>
+        <div className="auth-logo">SPINNINGLICORICE</div>
         {error ? (
           <>
             <div className="auth-error">{error}</div>
