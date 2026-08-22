@@ -533,7 +533,7 @@ textarea.field{min-height:90px;resize:vertical}
 .sl-hero-h1 { font-family: var(--font-heading); font-size: clamp(30px, 3.6vw, 46px); line-height: 1.1; margin: 0 0 24px; max-width: 16ch; }
 .sl-hero-sub { font-size: 17px; line-height: 28px; max-width: 52ch; margin: 0; }
 
-.sl-disc { width: clamp(200px, 28vw, 300px); height: clamp(200px, 28vw, 300px); margin: 0 0 32px; }
+.sl-disc { width: clamp(200px, 28vw, 300px); height: clamp(200px, 28vw, 300px); margin: 0 0 32px; display: block; object-fit: contain; }
 
 .sl-card {
   position: relative; z-index: 1;
@@ -595,14 +595,6 @@ textarea.field{min-height:90px;resize:vertical}
 .sl-feature-dot { width: 18px; height: 18px; border-radius: 50%; margin-bottom: 16px; }
 .sl-feature-h2 { font-family: var(--font-heading); font-size: 24px; line-height: 32px; margin: 0 0 16px; }
 .sl-feature-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 15.5px; line-height: 26px; color: color-mix(in srgb, var(--color-text) 78%, transparent); }
-
-.sl-photo-slot {
-  border-radius: 40px; overflow: hidden; aspect-ratio: 21 / 9; margin: 0 0 56px;
-  display: flex; align-items: center; justify-content: center;
-  background: repeating-linear-gradient(135deg, var(--color-surface), var(--color-surface) 12px, var(--color-bg) 12px, var(--color-bg) 24px);
-  border: 1px dashed var(--color-divider); color: color-mix(in srgb, var(--color-text) 55%, transparent);
-  font-size: 14px; text-align: center; padding: 24px;
-}
 
 .sl-footer { font-size: 13px; line-height: 28px; padding-bottom: 56px; color: color-mix(in srgb, var(--color-text) 70%, transparent); display: flex; gap: 24px; flex-wrap: wrap; }
 
