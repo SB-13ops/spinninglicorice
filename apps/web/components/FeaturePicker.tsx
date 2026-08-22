@@ -160,7 +160,7 @@ export default function FeaturePicker({
 
         {tab === "default" && (
           <div className="picker-custom">
-            <p className="share-hint">Reset your home page to the default Burnt Jacket banner.</p>
+            <p className="share-hint">Reset your home page to the default SpinningLicorice banner.</p>
             <button
               className="btn-small"
               disabled={saving}

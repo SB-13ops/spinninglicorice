@@ -125,7 +125,7 @@ export default function CollectionLive() {
             {item.image_url ? (
               <img src={item.image_url} alt={item.title} />
             ) : (
-              <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", background: "#0e0c09" }}>BURNT JACKET</div>
+              <div style={{ aspectRatio: "1", display: "grid", placeItems: "center", background: "#0e0c09" }}>SPINNINGLICORICE</div>
             )}
             <div className="record-body">
               <div className="record-title">{item.title}</div>

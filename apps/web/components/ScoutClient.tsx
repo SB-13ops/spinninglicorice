@@ -33,7 +33,7 @@ export default function ScoutClient() {
   }
 
   useEffect(() => {
-    load().catch(() => setMessage("Start the Burnt Jacket API to use Scout."));
+    load().catch(() => setMessage("Start the SpinningLicorice API to use Scout."));
   }, []);
 
   async function refresh() {
@@ -97,7 +97,7 @@ export default function ScoutClient() {
       {!items.length && (
         <div className="card empty-state">
           <div className="gold">CONCERT SCOUT</div>
-          <h2>Burnt Jacket is ready to scout.</h2>
+          <h2>SpinningLicorice is ready to scout.</h2>
           <p className="muted">
             Add your location in Profile, configure a Ticketmaster API key, and refresh Scout.
           </p>

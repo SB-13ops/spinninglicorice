@@ -29,7 +29,7 @@ export default function HomeFeatureCard() {
           {hero.image_url && <img src={hero.image_url} alt="" className="picker-thumb" />}
           <div>
             <div className="member-name">
-              {hero.type === "default" ? "Default Burnt Jacket banner" : hero.title}
+              {hero.type === "default" ? "Default SpinningLicorice banner" : hero.title}
             </div>
             {hero.subtitle && <div className="share-hint" style={{ margin: 0 }}>{hero.subtitle}</div>}
           </div>

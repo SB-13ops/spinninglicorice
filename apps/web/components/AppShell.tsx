@@ -38,19 +38,19 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (loading || !token) {
     // Avoid flashing the app before we know the auth state.
-    return <div className="app-loading">Loading Burnt Jacket…</div>;
+    return <div className="app-loading">Loading SpinningLicorice…</div>;
   }
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="brand">
-          <div className="logo">BURNT JACKET</div>
+          <div className="logo">SPINNINGLICORICE</div>
           <div className="tagline">Your collection. Your hunt. Your music.</div>
         </div>
         <div className="top-main">
           <div className="search-wrap">
-            <input className="search" placeholder="Search records, artists, concerts or ask Burnt Jacket..." />
+            <input className="search" placeholder="Search records, artists, concerts or ask SpinningLicorice..." />
             <div className="try">
               Try:
               <span className="chip">Find Dead albums I&apos;m missing under $50</span>
@@ -69,7 +69,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </a>
         ))}
         <div className="sidebar-footer">
-          Burnt Jacket V1<br />
+          SpinningLicorice V1<br />
           Beta
         </div>
       </aside>
