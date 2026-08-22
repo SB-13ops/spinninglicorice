@@ -37,7 +37,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   });
   if (!response.ok) {
     handleStatus(response.status);
-    throw new Error(`Burnt Jacket API ${response.status}: ${path}`);
+    throw new Error(`SpinningLicorice API ${response.status}: ${path}`);
   }
   return response.json();
 }
@@ -52,7 +52,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   if (!response.ok) {
     handleStatus(response.status);
     const text = await response.text();
-    throw new Error(text || `Burnt Jacket API ${response.status}: ${path}`);
+    throw new Error(text || `SpinningLicorice API ${response.status}: ${path}`);
   }
   return response.json();
 }
@@ -71,7 +71,7 @@ export async function apiSend<T>(
   if (!response.ok) {
     handleStatus(response.status);
     const text = await response.text();
-    throw new Error(text || `Burnt Jacket API ${response.status}: ${path}`);
+    throw new Error(text || `SpinningLicorice API ${response.status}: ${path}`);
   }
   if (response.status === 204) return null;
   return response.json();
