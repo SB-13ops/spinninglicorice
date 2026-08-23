@@ -32,6 +32,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isPublic, loading, token, router]);
 
+  // Safety net: if someone is already authenticated and lands on /login
+  // anyway (e.g. a stale bookmark, or a redirect_path edge case), move them
+  // forward instead of showing the sign-in form to an already-signed-in user.
+  // /login/callback handles its own redirect, so it's excluded here.
+  useEffect(() => {
+    if (
+      pathname.startsWith("/login") &&
+      !pathname.startsWith("/login/callback") &&
+      !loading &&
+      token
+    ) {
+      router.replace("/");
+    }
+  }, [pathname, loading, token, router]);
+
   if (isPublic) {
     return <>{children}</>;
   }
