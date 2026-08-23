@@ -107,7 +107,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginWith = useCallback((provider: "google" | "facebook") => {
-    const next = typeof window !== "undefined" ? window.location.pathname : "/";
+    const current = typeof window !== "undefined" ? window.location.pathname : "/";
+    // Starting from the login page itself has no meaningful "page to return
+    // to" — without this, clicking a social login button while sitting on
+    // /login would record "/login" as the destination, and a successful
+    // login would faithfully redirect right back to the login page itself.
+    const next = current.startsWith("/login") ? "/" : current;
     window.location.href = `${API_BASE}/auth/${provider}/login?redirect_path=${encodeURIComponent(
       next
     )}`;
