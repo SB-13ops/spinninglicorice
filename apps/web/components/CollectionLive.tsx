@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { apiGet, apiPost, apiSend } from "../lib/api";
 import BarcodeScanner from "./BarcodeScanner";
+import ConditionSuggest from "./ConditionSuggest";
 
 type Item = {
   collection_item_id: string;
@@ -185,6 +186,7 @@ export default function CollectionLive() {
                   {item.personal_notes && <div className="notes">{item.personal_notes}</div>}
                   <div className="badges">
                     {item.media_condition && <span className="badge good">{item.media_condition}</span>}
+                    {item.sleeve_condition && <span className="badge">sleeve: {item.sleeve_condition}</span>}
                     {item.purchase_price != null && <span className="badge">${item.purchase_price.toFixed(0)}</span>}
                     <span className="badge">{item.source.toUpperCase()}</span>
                   </div>
@@ -203,7 +205,7 @@ export default function CollectionLive() {
 }
 
 function ManualForm({ onAdded, onError }: { onAdded: () => void; onError: (s: string) => void }) {
-  const [f, setF] = useState<any>({ title: "", artist_name: "", year: "", label_name: "", media_condition: "", purchase_price: "", personal_rating: 0, personal_notes: "", target: "collection", max_price: "" });
+  const [f, setF] = useState<any>({ title: "", artist_name: "", year: "", label_name: "", media_condition: "", sleeve_condition: "", purchase_price: "", personal_rating: 0, personal_notes: "", target: "collection", max_price: "" });
   const [busy, setBusy] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   const wantlist = f.target === "wantlist";
@@ -217,6 +219,7 @@ function ManualForm({ onAdded, onError }: { onAdded: () => void; onError: (s: st
       if (f.year) body.year = parseInt(f.year);
       if (f.label_name.trim()) body.label_name = f.label_name.trim();
       if (f.media_condition) body.media_condition = f.media_condition;
+      if (f.sleeve_condition) body.sleeve_condition = f.sleeve_condition;
       if (wantlist) {
         if (f.max_price) body.max_price = parseFloat(f.max_price);
       } else {
@@ -244,9 +247,19 @@ function ManualForm({ onAdded, onError }: { onAdded: () => void; onError: (s: st
       </div>
       <div className="add-row">
         <select value={f.media_condition} onChange={(e) => set("media_condition", e.target.value)}>
-          <option value="">{wantlist ? "Min condition…" : "Condition…"}</option>
+          <option value="">{wantlist ? "Min media condition…" : "Media condition…"}</option>
           {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
+        <ConditionSuggest onApply={(g) => set("media_condition", g)} onError={onError} />
+      </div>
+      <div className="add-row">
+        <select value={f.sleeve_condition} onChange={(e) => set("sleeve_condition", e.target.value)}>
+          <option value="">Sleeve condition…</option>
+          {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <ConditionSuggest onApply={(g) => set("sleeve_condition", g)} onError={onError} />
+      </div>
+      <div className="add-row">
         {wantlist ? (
           <input placeholder="Max $ you'd pay" value={f.max_price} onChange={(e) => set("max_price", e.target.value)} style={{ width: 130 }} />
         ) : (
@@ -341,6 +354,7 @@ function DiscogsSearch({ onAdded, onError }: { onAdded: () => void; onError: (s:
 function EditForm({ item, onSaved, onError }: { item: Item; onSaved: (u: Item) => void; onError: (s: string) => void }) {
   const [f, setF] = useState({
     media_condition: item.media_condition || "",
+    sleeve_condition: item.sleeve_condition || "",
     purchase_price: item.purchase_price != null ? String(item.purchase_price) : "",
     personal_notes: item.personal_notes || "",
   });
@@ -352,6 +366,7 @@ function EditForm({ item, onSaved, onError }: { item: Item; onSaved: (u: Item) =
     try {
       const body: any = {
         media_condition: f.media_condition || null,
+        sleeve_condition: f.sleeve_condition || null,
         purchase_price: f.purchase_price ? parseFloat(f.purchase_price) : null,
         personal_notes: f.personal_notes || null,
       };
@@ -366,10 +381,20 @@ function EditForm({ item, onSaved, onError }: { item: Item; onSaved: (u: Item) =
 
   return (
     <div className="add-form">
-      <select value={f.media_condition} onChange={(e) => set("media_condition", e.target.value)}>
-        <option value="">Condition…</option>
-        {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-      </select>
+      <div className="add-row">
+        <select value={f.media_condition} onChange={(e) => set("media_condition", e.target.value)}>
+          <option value="">Media condition…</option>
+          {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <ConditionSuggest onApply={(g) => set("media_condition", g)} onError={onError} />
+      </div>
+      <div className="add-row">
+        <select value={f.sleeve_condition} onChange={(e) => set("sleeve_condition", e.target.value)}>
+          <option value="">Sleeve condition…</option>
+          {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <ConditionSuggest onApply={(g) => set("sleeve_condition", g)} onError={onError} />
+      </div>
       <input placeholder="Paid $" value={f.purchase_price} onChange={(e) => set("purchase_price", e.target.value)} />
       <textarea placeholder="Notes" value={f.personal_notes} onChange={(e) => set("personal_notes", e.target.value)} />
       <button className="btn greenbtn" onClick={save} disabled={busy}>{busy ? "SAVING…" : "SAVE"}</button>
