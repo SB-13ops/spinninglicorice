@@ -42,6 +42,7 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
     notes: string;
   } | null>(null);
   const [photoHits, setPhotoHits] = useState<DiscogsHit[]>([]);
+  const [uploadBusy, setUploadBusy] = useState(false);
 
   useEffect(() => {
     // Constrain to the barcode formats actually printed on record sleeves
@@ -129,16 +130,49 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
     setHits([]);
     setBarcode(null);
     if (!readerRef.current) return;
-    const url = URL.createObjectURL(file);
+    setUploadBusy(true);
     try {
-      const result = await readerRef.current.decodeFromImageUrl(url);
-      const text = result.getText();
-      setBarcode(text);
-      lookup(text);
-    } catch {
-      onError("No barcode found in that image. Try a clearer, closer photo of the barcode.");
+      const url = URL.createObjectURL(file);
+      let decoded: string | null = null;
+      try {
+        const result = await readerRef.current.decodeFromImageUrl(url);
+        decoded = result.getText();
+      } catch {
+        // No barcode readable in the photo — not an error, just means this is
+        // probably a cover/label shot, so we try AI identification below.
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+
+      if (decoded) {
+        setBarcode(decoded);
+        setStatus("Looking up barcode…");
+        try {
+          const r = await apiGet<{ results: DiscogsHit[] }>(`/collection/scan?barcode=${encodeURIComponent(decoded)}`);
+          if (r.results.length) {
+            setHits(r.results);
+            setStatus("");
+            return;
+          }
+          setStatus("Found a barcode, but no Discogs match for it. Trying to identify the cover instead…");
+        } catch (e) {
+          // A real error (e.g. Discogs not connected) — show it and stop,
+          // rather than also failing the AI fallback for the same reason.
+          setStatus("");
+          onError((e as Error).message);
+          return;
+        }
+      } else {
+        setStatus("No barcode found in that photo — trying to identify the cover instead…");
+      }
+
+      // One photo, two detection methods: barcode first (fast, exact), then
+      // AI cover/label recognition as the automatic fallback — no separate
+      // button needed, since "Scan" should just work either way.
+      await identifyPhoto(file);
+      setStatus("");
     } finally {
-      URL.revokeObjectURL(url);
+      setUploadBusy(false);
     }
   }
 
@@ -194,7 +228,8 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
         </button>
       </div>
       <div className="muted small">
-        Scan a record's barcode with your camera, or upload a photo of it. Requires a connected Discogs account.
+        Point your camera at a barcode, or upload a photo — of the barcode, or the cover if there
+        isn't one. Requires a connected Discogs account.
       </div>
 
       <div className="scan-stage">
@@ -209,13 +244,14 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
         ) : (
           <button className="btn light" onClick={stopCamera}>STOP</button>
         )}
-        <label className="btn light" style={{ cursor: "pointer" }}>
-          UPLOAD PHOTO
+        <label className="btn light" style={{ cursor: uploadBusy ? "default" : "pointer" }}>
+          {uploadBusy ? "SCANNING…" : "UPLOAD PHOTO"}
           <input
             type="file"
             accept="image/*"
             capture="environment"
             style={{ display: "none" }}
+            disabled={uploadBusy}
             onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
           />
         </label>
@@ -237,61 +273,50 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
         ))}
       </div>
 
-      <div className="scan-divider">
-        <span>or, if there's no barcode</span>
-      </div>
+      {(photoBusy || photoIdentified || photoHits.length > 0) && (
+        <div className="photo-id-section">
+          <div className="muted small">
+            <strong>AI Photo ID</strong> — since no barcode matched, we tried identifying the cover
+            instead. This is less reliable than a barcode: lighting, angle, and reissues sharing the
+            same artwork can all throw it off, so double-check the match before adding.
+          </div>
 
-      <div className="photo-id-section">
-        <div className="muted small">
-          <strong>AI Photo ID</strong> — take a photo of the cover or label and we'll try to identify it.
-          This is less reliable than a barcode: lighting, angle, and reissues sharing the same
-          artwork can all throw it off, so double-check the match before adding.
-        </div>
-        <label className="btn light" style={{ cursor: "pointer", marginTop: 8 }}>
-          {photoBusy ? "IDENTIFYING…" : "IDENTIFY BY PHOTO"}
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style={{ display: "none" }}
-            disabled={photoBusy}
-            onChange={(e) => e.target.files?.[0] && identifyPhoto(e.target.files[0])}
-          />
-        </label>
+          {photoBusy && <div className="muted small" style={{ marginTop: 8 }}>Identifying…</div>}
 
-        {photoIdentified && (
-          <div className="photo-id-result">
-            {photoIdentified.artist || photoIdentified.title ? (
-              <>
+          {photoIdentified && (
+            <div className="photo-id-result">
+              {photoIdentified.artist || photoIdentified.title ? (
+                <>
+                  <div className="muted small">
+                    AI thinks this is: <strong>{[photoIdentified.artist, photoIdentified.title].filter(Boolean).join(" — ")}</strong>
+                    {" "}({photoIdentified.confidence} confidence)
+                  </div>
+                  {photoIdentified.notes && <div className="muted small">{photoIdentified.notes}</div>}
+                </>
+              ) : (
                 <div className="muted small">
-                  AI thinks this is: <strong>{[photoIdentified.artist, photoIdentified.title].filter(Boolean).join(" — ")}</strong>
-                  {" "}({photoIdentified.confidence} confidence)
+                  Couldn't identify anything from that photo{photoIdentified.notes ? ` — ${photoIdentified.notes}` : "."} Try a clearer photo, or add it by hand.
                 </div>
-                {photoIdentified.notes && <div className="muted small">{photoIdentified.notes}</div>}
-              </>
-            ) : (
-              <div className="muted small">
-                Couldn't identify anything from that photo{photoIdentified.notes ? ` — ${photoIdentified.notes}` : "."} Try a clearer photo, the barcode, or add it by hand.
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
-        {photoHits.length > 0 && (
-          <div className="hit-list">
-            {photoHits.map((hit) => (
-              <div className="hit" key={hit.discogs_id}>
-                {hit.thumb && <img src={hit.thumb} alt="" />}
-                <div className="hit-body">
-                  <div>{hit.title}</div>
-                  <div className="muted small">{[hit.year, hit.country, hit.label, hit.catno].filter(Boolean).join(" · ")}</div>
+          {photoHits.length > 0 && (
+            <div className="hit-list">
+              {photoHits.map((hit) => (
+                <div className="hit" key={hit.discogs_id}>
+                  {hit.thumb && <img src={hit.thumb} alt="" />}
+                  <div className="hit-body">
+                    <div>{hit.title}</div>
+                    <div className="muted small">{[hit.year, hit.country, hit.label, hit.catno].filter(Boolean).join(" · ")}</div>
+                  </div>
+                  <button className="btn-small" onClick={() => add(hit)}>ADD</button>
                 </div>
-                <button className="btn-small" onClick={() => add(hit)}>ADD</button>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

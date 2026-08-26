@@ -141,7 +141,7 @@ export default function CollectionLive() {
           <div className="tabs">
             <button className={tab === "manual" ? "tab active" : "tab"} onClick={() => setTab("manual")}>Type it in</button>
             <button className={tab === "discogs" ? "tab active" : "tab"} onClick={() => setTab("discogs")}>Search Discogs</button>
-            <button className={tab === "scan" ? "tab active" : "tab"} onClick={() => setTab("scan")}>Scan barcode</button>
+            <button className={tab === "scan" ? "tab active" : "tab"} onClick={() => setTab("scan")}>Scan</button>
           </div>
           {tab === "manual" && <ManualForm onAdded={() => { setShowAdd(false); load(); }} onError={setError} />}
           {tab === "discogs" && <DiscogsSearch onAdded={() => { setShowAdd(false); load(); }} onError={setError} />}
