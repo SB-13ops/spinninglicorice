@@ -608,3 +608,61 @@ class CollectionValueSnapshot(Base):
     # Per-holding breakdown at capture time: [{release_id, title, value}] — used
     # to compute best/worst movers by diffing against an earlier snapshot.
     holdings: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+
+# ---------------------------------------------------------------------------
+# Public collector-to-collector board
+#
+# Distinct from the private FriendGroup listings (which stay scoped to a
+# specific group): board posts are visible to every user of the app. A
+# "trade" post references something the poster already owns (a
+# CollectionItem); a "looking_for" post references something on their own
+# wantlist (a WantlistItem) — so posting always starts from a record they've
+# already tracked one way or the other, never a fresh freeform entry.
+# ---------------------------------------------------------------------------
+
+BOARD_POST_KIND_TRADE = "trade"
+BOARD_POST_KIND_LOOKING_FOR = "looking_for"
+
+
+class BoardPost(Base):
+    __tablename__ = "board_posts"
+    __table_args__ = (
+        UniqueConstraint("user_id", "collection_item_id", name="uq_board_post_collection_item"),
+        UniqueConstraint("user_id", "wantlist_item_id", name="uq_board_post_wantlist_item"),
+    )
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(20))  # "trade" | "looking_for"
+    # Exactly one of these is set, matching `kind`.
+    collection_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("collection_items.id", ondelete="CASCADE")
+    )
+    wantlist_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wantlist_items.id", ondelete="CASCADE")
+    )
+    release_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("releases.id", ondelete="CASCADE"), index=True
+    )
+    note: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="open", server_default="open")  # open | closed
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
+class BoardPostComment(Base):
+    __tablename__ = "board_post_comments"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    post_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("board_posts.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    message: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
