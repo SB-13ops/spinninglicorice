@@ -232,7 +232,24 @@ def search_discogs_by_barcode(db: Session, user_id: uuid.UUID, barcode: str, *, 
     if account is None:
         raise RuntimeError("Connect your Discogs account first to scan.")
     client = client_for_account(account)
-    payload = client.database_search(barcode=cleaned, per_page=min(limit, 25), page=1)
+
+    # A physical barcode can be printed as 12-digit UPC-A or 13-digit EAN-13
+    # (EAN-13 is just UPC-A with a leading 0), and Discogs entries aren't
+    # consistent about which form they store — a scan can read the barcode
+    # correctly and still miss a real match if we only try the one format the
+    # scanner happened to return. Try the alternate form before giving up.
+    candidates = [cleaned]
+    if len(cleaned) == 12:
+        candidates.append("0" + cleaned)
+    elif len(cleaned) == 13 and cleaned.startswith("0"):
+        candidates.append(cleaned[1:])
+
+    payload: dict = {"results": []}
+    for candidate in candidates:
+        payload = client.database_search(barcode=candidate, per_page=min(limit, 25), page=1)
+        if payload.get("results"):
+            break
+
     out = []
     for row in payload.get("results", [])[:limit]:
         out.append(
