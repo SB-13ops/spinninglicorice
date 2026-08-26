@@ -76,7 +76,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ☰
         </button>
         <div className="brand">
-          <div className="logo">SPINNINGLICORICE</div>
+          <div className="logo">SPINNING LICORICE</div>
           <div className="tagline">Your collection. Your hunt. Your music.</div>
         </div>
         <div className="top-main">
