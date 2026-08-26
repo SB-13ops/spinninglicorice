@@ -13,7 +13,7 @@ Discogs database search
     ↓
 Exact Discogs Release ID
     ↓
-Burnt Jacket release mapping
+SpinningLicorice release mapping
     ↓
 Discogs marketplace summary
     ↓
@@ -21,7 +21,7 @@ Discogs price suggestions
     ↓
 Exact ownership / Wantlist check
     ↓
-Burnt Jacket Score
+SpinningLicorice Score
     ↓
 Hunter result
 ```
@@ -30,9 +30,9 @@ Hunter result
 
 For Discogs-sourced opportunities, the match is exact:
 
-`Discogs release ID → external_mappings → Burnt Jacket release ID`
+`Discogs release ID → external_mappings → SpinningLicorice release ID`
 
-This receives a **100% release-match confidence** because it represents the same Discogs release imported into the Burnt Jacket catalog.
+This receives a **100% release-match confidence** because it represents the same Discogs release imported into the SpinningLicorice catalog.
 
 A metadata fallback matcher is also included for future providers that do not expose Discogs IDs. It scores:
 
@@ -46,7 +46,7 @@ The fuzzy fallback only returns a match above the configured confidence threshol
 
 ## Real marketplace data
 
-Burnt Jacket now uses the connected Discogs API for:
+SpinningLicorice now uses the connected Discogs API for:
 
 - release discovery
 - current `lowest_price`
@@ -59,7 +59,7 @@ Important distinction: this V1 integration shows a **real release-level marketpl
 
 ## Ownership intelligence
 
-Because Hunter resolves the exact Burnt Jacket release, it can now answer:
+Because Hunter resolves the exact SpinningLicorice release, it can now answer:
 
 - **OWNED** — the exact release is already in the user's Collection
 - **WANTLIST** — the exact release is already on the user's Wantlist

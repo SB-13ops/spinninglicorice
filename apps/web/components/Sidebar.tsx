@@ -10,7 +10,7 @@ const links = [
 export default function Sidebar() {
   return (
     <aside className="sidebar">
-      <div className="logo">BURNT JACKET</div>
+      <div className="logo">SPINNINGLICORICE</div>
       <div className="tagline">Your collection. Your hunt. Your music.</div>
       <nav className="nav">
         {links.map(([label, href]) => (

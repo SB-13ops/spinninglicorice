@@ -3,7 +3,7 @@
 ## What now works
 
 ### Collection
-`GET /api/v1/collection` returns imported Burnt Jacket collection rows with:
+`GET /api/v1/collection` returns imported SpinningLicorice collection rows with:
 - release
 - artists
 - year
@@ -16,7 +16,7 @@
 - purchase price
 - source
 
-The Next.js Collection page reads this endpoint and renders the actual records in the approved Burnt Jacket visual style.
+The Next.js Collection page reads this endpoint and renders the actual records in the approved SpinningLicorice visual style.
 
 ### Collector DNA V1
 `POST /api/v1/dna/rebuild` analyzes the imported collection using deterministic logic.
@@ -57,5 +57,5 @@ Hunter should be the next major build:
 - natural-language Hunt parser
 - provider-neutral listing model
 - collection ownership checks
-- Burnt Jacket Score V1
+- SpinningLicorice Score V1
 - “why this is a match” explanation payload

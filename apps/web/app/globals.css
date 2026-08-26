@@ -585,14 +585,14 @@ textarea.field{min-height:90px;resize:vertical}
 
 /* ---- Collection/Wantlist target toggle ---- */
 .target-toggle{display:flex;gap:0;border:1px solid #5a4528;border-radius:8px;overflow:hidden;margin-bottom:4px}
-.tgl{flex:1;background:#ebddc5;color:var(--muted);border:none;padding:9px 12px;cursor:pointer;font-weight:600;font-size:13px}
-.tgl.active{background:var(--gold);color:#1a1206}
+.tgl{flex:1;background:#0e0d0a;color:var(--muted);border:none;padding:9px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.tgl.active{background:var(--gold);color:#15120e}
 
 /* ---- Email/password auth form ---- */
 .auth-email-form{display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
-.auth-input{background:#ebddc5;color:var(--cream);border:1px solid #5a4528;border-radius:9px;padding:13px;font-size:14px}
+.auth-input{background:#0e0d0a;color:var(--muted);border:1px solid #5a4528;border-radius:9px;padding:13px;font-size:14px}
 .auth-input::placeholder{color:var(--muted)}
-.auth-btn.auth-email{background:var(--gold);color:#1a1206;border:none;font-weight:700;cursor:pointer}
+.auth-btn.auth-email{background:var(--gold);color:#15120e;border:none;font-weight:700;cursor:pointer}
 .auth-btn.auth-email:hover{opacity:0.92;background:var(--gold)}
 .auth-btn.auth-email:disabled{opacity:0.6;cursor:default}
 .auth-switch{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:2px 0;text-align:center}

@@ -74,7 +74,7 @@ def build_collector_card(db: Session, user_id: uuid.UUID, *, display_name: str |
     worth = value.get("total_value") or 0
     count = value.get("item_count") or 0
 
-    name = html.escape(display_name or "A Burnt Jacket Collector")
+    name = html.escape(display_name or "A SpinningLicorice Collector")
     genres_txt = html.escape(", ".join(top_genres) or "Eclectic")
     artists_txt = html.escape(", ".join(top_artists) or "—")
 
@@ -99,7 +99,7 @@ def build_collector_card(db: Session, user_id: uuid.UUID, *, display_name: str |
   <circle cx="980" cy="150" r="30" fill="{_GOLD}"/>
   <circle cx="980" cy="150" r="8" fill="{_BG}"/>
 
-  <text x="70" y="120" font-family="Georgia, serif" font-size="30" fill="{_GOLD}" font-weight="bold" letter-spacing="2">BURNT JACKET</text>
+  <text x="70" y="120" font-family="Georgia, serif" font-size="30" fill="{_GOLD}" font-weight="bold" letter-spacing="2">SPINNINGLICORICE</text>
   <text x="70" y="185" font-family="Georgia, serif" font-size="56" fill="{_CREAM}" font-weight="bold">{name}</text>
   <text x="70" y="225" font-family="Arial, sans-serif" font-size="24" fill="{_MUTED}">{tier} · Rarity {score}/100</text>
 

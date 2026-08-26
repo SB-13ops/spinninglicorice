@@ -37,7 +37,7 @@ class ReleaseMatch:
 
 
 class ReleaseMatcher:
-    """Matches a marketplace/catalog candidate to a Burnt Jacket release.
+    """Matches a marketplace/catalog candidate to a SpinningLicorice release.
 
     Exact provider IDs always win. Fuzzy matching is only a fallback.
     """

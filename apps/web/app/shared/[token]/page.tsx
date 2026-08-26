@@ -35,7 +35,7 @@ export default function SharedViewPage() {
     return (
       <div className="auth-wrap">
         <div className="auth-card">
-          <div className="auth-logo">BURNT JACKET</div>
+          <div className="auth-logo">SPINNINGLICORICE</div>
           <div className="auth-error">{error}</div>
         </div>
       </div>
@@ -45,7 +45,7 @@ export default function SharedViewPage() {
   return (
     <div className="shared-view">
       <div className="shared-header">
-        <div className="auth-logo">BURNT JACKET</div>
+        <div className="auth-logo">SPINNINGLICORICE</div>
         <span className="pill">Shared collection · read-only</span>
       </div>
       {!data ? (

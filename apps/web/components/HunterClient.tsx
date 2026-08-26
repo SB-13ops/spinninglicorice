@@ -62,7 +62,7 @@ export default function HunterClient() {
   }
 
   useEffect(() => {
-    loadHunts().catch(() => setMessage("Start the Burnt Jacket API to use Hunter."));
+    loadHunts().catch(() => setMessage("Start the SpinningLicorice API to use Hunter."));
   }, []);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function HunterClient() {
       const data = await response.json();
       setParsed(data.criteria);
     } catch {
-      setMessage("Could not reach the Burnt Jacket API.");
+      setMessage("Could not reach the SpinningLicorice API.");
     } finally {
       setBusy(false);
     }
@@ -137,7 +137,7 @@ export default function HunterClient() {
     <>
       <section className="hunter-create card">
         <div className="orange">🔥 WHAT ARE YOU HUNTING?</div>
-        <h2>Tell Burnt Jacket what you want.</h2>
+        <h2>Tell SpinningLicorice what you want.</h2>
 
         <form onSubmit={createHunt} className="hunter-form">
           <input
@@ -172,7 +172,7 @@ export default function HunterClient() {
 
         {parsed && (
           <div className="parsed-box">
-            <strong>Burnt Jacket understood:</strong>
+            <strong>SpinningLicorice understood:</strong>
             <div className="criteria-chips">
               {Object.entries(parsed)
                 .filter(([key, value]) =>

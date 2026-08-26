@@ -82,6 +82,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="top-main">
           <TopSearch />
           <ThemeToggle />
+          <div className="search-wrap">
+            <input className="search" placeholder="Search records, artists, concerts or ask SpinningLicorice..." />
+            <div className="try">
+              Try:
+              <span className="chip">Find Dead albums I&apos;m missing under $50</span>
+              <span className="chip">Shows near me this weekend</span>
+            </div>
+          </div>
           <AccountBar />
         </div>
       </header>

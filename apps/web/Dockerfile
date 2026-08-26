@@ -22,6 +22,12 @@ RUN npm ci
 
 # Build the app. next.config.mjs sets output:"standalone".
 COPY . .
+# Guarantee a public/ directory exists before building, regardless of whether
+# one was actually committed to the repo. Docker's COPY requires the source to
+# exist for a directory copy — it does NOT silently skip a missing folder —
+# so without this, the runner stage's public/ copy below fails the whole build
+# if the (often near-empty) public/ folder didn't make it into version control.
+RUN mkdir -p public
 RUN npm run build
 
 # ---- Runner -----------------------------------------------------------------
@@ -38,10 +44,10 @@ ENV HOSTNAME=0.0.0.0 \
 RUN addgroup -g 10001 nodejs && adduser -u 10001 -G nodejs -S nextjs
 
 # Copy only what the standalone server needs: the traced server + node_modules,
-# the static assets, and the public dir (if present).
+# the static assets, and the public dir. The builder stage guarantees public/
+# exists (see RUN mkdir -p public above), so this always succeeds.
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# public/ is optional; the trailing "./" copy is a no-op if it doesn't exist.
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs

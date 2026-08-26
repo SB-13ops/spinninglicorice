@@ -72,7 +72,7 @@ export default function HunterLive(){
     <>
       <div className="page-header">
         <h1>Hunter</h1>
-        <p>Tell Burnt Jacket what you want. We'll score the opportunities.</p>
+        <p>Tell SpinningLicorice what you want. We'll score the opportunities.</p>
       </div>
 
       <div className="card form-card">

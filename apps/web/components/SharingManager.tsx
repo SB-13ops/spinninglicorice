@@ -88,7 +88,7 @@ export default function SharingManager() {
     <div className="share-page">
       <h1 className="share-title">Sharing</h1>
       <p className="share-sub">
-        Give people access to your Burnt Jacket account — read-only or as an admin.
+        Give people access to your SpinningLicorice account — read-only or as an admin.
       </p>
       {error && <div className="auth-error">{error}</div>}
 

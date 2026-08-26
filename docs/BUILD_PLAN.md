@@ -1,4 +1,4 @@
-# Burnt Jacket V1 Development Plan
+# SpinningLicorice V1 Development Plan
 
 ## Milestone 1 — Foundation
 - Project scaffold
@@ -27,7 +27,7 @@
 
 ## Milestone 4 — Home feed
 - collection snapshot
-- Burnt Jacket Pick
+- SpinningLicorice Pick
 - recent additions
 - collection gaps
 - DNA preview
@@ -39,7 +39,7 @@
 - listing normalization
 - ownership checks
 - value comparison
-- Burnt Jacket Score
+- SpinningLicorice Score
 - alerts
 
 ## Milestone 6 — Scout

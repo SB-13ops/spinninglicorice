@@ -1,4 +1,4 @@
-# Burnt Jacket V1 API Surface
+# SpinningLicorice V1 API Surface
 
 Base path: `/api/v1`
 

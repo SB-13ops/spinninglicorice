@@ -6,7 +6,7 @@ import { apiGet, apiPost } from "../lib/api";
 type Enrichment = { text: string; citations: Array<{ url: string; title: string | null }> };
 
 /**
- * A small "Ask Burnt Jacket AI about this pressing" action. Only renders when the
+ * A small "Ask SpinningLicorice AI about this pressing" action. Only renders when the
  * server reports AI is enabled (GET /ai/status), so it disappears cleanly when
  * no Anthropic key is configured.
  */
