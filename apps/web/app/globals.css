@@ -767,3 +767,26 @@ html[data-theme="dark"] .batch-item{background:#17140f}
 /* ---- Condition photo suggestion helper ---- */
 .condition-suggest{display:flex;flex-direction:column;gap:4px;justify-content:center}
 .condition-suggest-result{display:flex;flex-direction:column;gap:4px;margin-top:2px;max-width:260px}
+
+/* ---- Collector board ---- */
+.board-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.board-filter{display:flex;gap:8px}
+.board-list{display:flex;flex-direction:column;gap:14px}
+.board-post{display:flex;gap:14px;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:14px}
+.board-post-thumb{width:84px;height:84px;flex:none;border-radius:7px;overflow:hidden;background:#0003}
+.board-post-thumb img{width:100%;height:100%;object-fit:cover}
+.board-post-thumb-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-size:10px;text-align:center;color:var(--muted);background:var(--panel2)}
+.board-post-body{flex:1;min-width:0}
+.board-post-header{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.board-post-title{font-weight:700;font-size:16px}
+.board-post-note{font-style:italic}
+.board-post-actions{display:flex;gap:14px;margin-top:8px}
+.board-comments{margin-top:10px;padding-top:10px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:6px}
+.board-comment{font-size:13px}
+.board-comment-form{display:flex;gap:8px;margin-top:4px}
+.board-comment-form input{flex:1;background:var(--panel2);color:var(--cream);border:1px solid var(--line2);
+  border-radius:7px;padding:8px 10px;font-size:13px}
+.board-picker-list{max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.board-picker-row{display:flex;align-items:center;gap:8px;font-size:14px;padding:6px;border-radius:6px;cursor:pointer}
+.board-picker-row:hover{background:var(--panel2)}
