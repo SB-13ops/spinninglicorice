@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # so the app runs fine without a key.
     anthropic_api_key: str = Field(default="", validation_alias="ANTHROPIC_API_KEY")
     # Cheap, fast model for structured extraction and short explanations.
-    ai_fast_model: str = Field(default="claude-haiku-4-5", validation_alias="AI_FAST_MODEL")
+    ai_fast_model: str = Field(default="claude-haiku-4-5-20251001", validation_alias="AI_FAST_MODEL")
     # More capable model for web-search-backed research.
     ai_research_model: str = Field(default="claude-sonnet-5", validation_alias="AI_RESEARCH_MODEL")
     # Hard cap on web searches per enrichment request (each search costs money).
