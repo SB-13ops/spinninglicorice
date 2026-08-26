@@ -162,8 +162,14 @@ def social_callback(
 
     redirect_path = get_login_state_store().pop(state)
     if redirect_path is None:
-        # Unknown/expired state -> possible CSRF or a stale link.
-        raise HTTPException(status_code=400, detail="Invalid or expired login state.")
+        # Unknown/expired state. This check is also our CSRF protection, so a
+        # failed lookup must still block the login — we don't soften this
+        # into a silent pass-through. What we *do* improve is the failure
+        # itself: redirect to a clear, styled message instead of a raw JSON
+        # 400, and (see get_oauth_state_store) retry transient store hiccups
+        # automatically so a genuine, valid state is far less likely to be
+        # reported as missing in the first place.
+        return RedirectResponse(url=f"{web}/login?error=expired_state")
 
     p = get_provider(provider)
     try:
