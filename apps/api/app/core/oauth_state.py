@@ -105,8 +105,23 @@ def get_oauth_state_store() -> OAuthStateStore:
         return _store
     if settings.redis_url:
         import redis  # imported lazily so local dev without redis installed still runs
+        from redis.backoff import ExponentialBackoff
+        from redis.retry import Retry
 
-        client = redis.Redis.from_url(settings.redis_url)
+        # A transient hiccup on the *first* Redis command in a while (cold
+        # connection, brief network blip) previously surfaced as a failed
+        # login-state lookup — the user would complete the whole Google
+        # sign-in, then bounce back to /login with no visible error, only to
+        # succeed on a retry. Automatic retries here mean that class of
+        # transient failure resolves itself invisibly instead of costing the
+        # person a full extra OAuth round-trip.
+        client = redis.Redis.from_url(
+            settings.redis_url,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+            retry=Retry(ExponentialBackoff(cap=1.0, base=0.05), retries=3),
+            retry_on_error=[ConnectionError, TimeoutError],
+        )
         _store = RedisOAuthStateStore(client)
     else:
         _store = InMemoryOAuthStateStore()
