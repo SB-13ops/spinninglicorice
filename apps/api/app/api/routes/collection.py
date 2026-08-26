@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -18,6 +18,7 @@ from app.services.collection_edit import (
     search_discogs_by_barcode,
     update_item,
 )
+from app.services.photo_identify import identify_and_search
 
 router = APIRouter(prefix="/collection", tags=["collection"])
 
@@ -252,3 +253,32 @@ def delete_record(
     if not remove_item(db, ctx.owner_id, iid):
         raise HTTPException(status_code=404, detail="Record not found.")
     return None
+
+
+_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8MB
+
+
+@router.post("/identify-photo")
+async def identify_photo(
+    file: UploadFile = File(...),
+    ctx=Depends(require_account_read),
+    db: Session = Depends(get_db),
+):
+    """Identify a record from a photo of its cover or label (AI, best-effort),
+    then search Discogs for matches. A secondary option to barcode scanning —
+    less reliable, since it depends on recognizing cover art rather than
+    reading a printed code. Always returns the AI's raw guess alongside any
+    Discogs results, so a bad guess is visible rather than silently trusted.
+    """
+    if file.content_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Please upload a JPEG, PNG, or WebP photo.")
+    data = await file.read()
+    if len(data) > _MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=400, detail="That photo is too large (max 8MB).")
+    if not data:
+        raise HTTPException(status_code=400, detail="The uploaded photo was empty.")
+    try:
+        return identify_and_search(db, ctx.owner_id, data, file.content_type)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { apiGet, apiPost } from "../lib/api";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
+import { apiGet, apiPost, apiUpload } from "../lib/api";
 
 type DiscogsHit = {
   discogs_id: number;
@@ -31,9 +32,33 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
   const [hits, setHits] = useState<DiscogsHit[]>([]);
   const [status, setStatus] = useState("");
   const [target, setTarget] = useState("collection");
+  const [hint, setHint] = useState("");
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoIdentified, setPhotoIdentified] = useState<{
+    artist: string | null;
+    title: string | null;
+    confidence: string;
+    notes: string;
+  } | null>(null);
+  const [photoHits, setPhotoHits] = useState<DiscogsHit[]>([]);
 
   useEffect(() => {
-    readerRef.current = new BrowserMultiFormatReader();
+    // Constrain to the barcode formats actually printed on record sleeves
+    // (UPC/EAN), and turn on TRY_HARDER — without it, ZXing's default pass
+    // is tuned for speed over accuracy and can miss real barcodes that are
+    // slightly angled, distant, or under uneven lighting, which was
+    // previously making the camera preview show but never actually detect.
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.CODE_128,
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    readerRef.current = new BrowserMultiFormatReader(hints);
     return () => stopCamera();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -46,23 +71,46 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
     }
     controlsRef.current = null;
     setScanning(false);
+    setHint("");
+    if (hintTimerRef.current) {
+      clearTimeout(hintTimerRef.current);
+      hintTimerRef.current = null;
+    }
   }
 
   async function startCamera() {
     setStatus("");
     setHits([]);
     setBarcode(null);
+    setHint("");
     if (!readerRef.current || !videoRef.current) return;
     setScanning(true);
+    // If nothing's detected after a few seconds, this is almost always a
+    // positioning/lighting issue rather than a broken scanner — say so,
+    // since a silent camera preview with no feedback looks like it's frozen.
+    hintTimerRef.current = setTimeout(() => {
+      setHint("Still looking — move closer, fill the frame with the barcode, and avoid glare.");
+    }, 4000);
     try {
-      controlsRef.current = await readerRef.current.decodeFromVideoDevice(
-        undefined, // default camera (rear on phones)
+      controlsRef.current = await readerRef.current.decodeFromConstraints(
+        // Explicitly request the rear camera. Letting ZXing pick a default
+        // device is ambiguous across browsers/versions and can silently
+        // select the front-facing camera on some phones — which looks
+        // exactly like "the camera works but never scans anything," since
+        // the user is pointing the back of the phone at the barcode while
+        // the front camera captures their face instead.
+        { video: { facingMode: { ideal: "environment" } } },
         videoRef.current,
         (result, _err, controls) => {
           if (result) {
             controls.stop();
             controlsRef.current = null;
             setScanning(false);
+            setHint("");
+            if (hintTimerRef.current) {
+              clearTimeout(hintTimerRef.current);
+              hintTimerRef.current = null;
+            }
             const text = result.getText();
             setBarcode(text);
             lookup(text);
@@ -71,6 +119,7 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
       );
     } catch (e) {
       setScanning(false);
+      setHint("");
       onError("Couldn't start the camera. Grant camera permission, or upload a photo instead.");
     }
   }
@@ -114,6 +163,26 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
     }
   }
 
+  async function identifyPhoto(file: File) {
+    setPhotoBusy(true);
+    setPhotoIdentified(null);
+    setPhotoHits([]);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiUpload<{
+        identified: { artist: string | null; title: string | null; confidence: string; notes: string };
+        results: DiscogsHit[];
+      }>("/collection/identify-photo", formData);
+      setPhotoIdentified(res.identified);
+      setPhotoHits(res.results);
+    } catch (e) {
+      onError((e as Error).message);
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
   return (
     <div className="add-form">
       <div className="target-toggle">
@@ -129,9 +198,10 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
       </div>
 
       <div className="scan-stage">
-        <video ref={videoRef} className={scanning ? "scan-video on" : "scan-video"} muted playsInline />
+        <video ref={videoRef} className={scanning ? "scan-video on" : "scan-video"} muted autoPlay playsInline />
         {scanning && <div className="scan-reticle" />}
       </div>
+      {hint && <div className="muted small">{hint}</div>}
 
       <div className="add-row">
         {!scanning ? (
@@ -165,6 +235,62 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
             <button className="btn-small" onClick={() => add(hit)}>ADD</button>
           </div>
         ))}
+      </div>
+
+      <div className="scan-divider">
+        <span>or, if there's no barcode</span>
+      </div>
+
+      <div className="photo-id-section">
+        <div className="muted small">
+          <strong>AI Photo ID</strong> — take a photo of the cover or label and we'll try to identify it.
+          This is less reliable than a barcode: lighting, angle, and reissues sharing the same
+          artwork can all throw it off, so double-check the match before adding.
+        </div>
+        <label className="btn light" style={{ cursor: "pointer", marginTop: 8 }}>
+          {photoBusy ? "IDENTIFYING…" : "IDENTIFY BY PHOTO"}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
+            disabled={photoBusy}
+            onChange={(e) => e.target.files?.[0] && identifyPhoto(e.target.files[0])}
+          />
+        </label>
+
+        {photoIdentified && (
+          <div className="photo-id-result">
+            {photoIdentified.artist || photoIdentified.title ? (
+              <>
+                <div className="muted small">
+                  AI thinks this is: <strong>{[photoIdentified.artist, photoIdentified.title].filter(Boolean).join(" — ")}</strong>
+                  {" "}({photoIdentified.confidence} confidence)
+                </div>
+                {photoIdentified.notes && <div className="muted small">{photoIdentified.notes}</div>}
+              </>
+            ) : (
+              <div className="muted small">
+                Couldn't identify anything from that photo{photoIdentified.notes ? ` — ${photoIdentified.notes}` : "."} Try a clearer photo, the barcode, or add it by hand.
+              </div>
+            )}
+          </div>
+        )}
+
+        {photoHits.length > 0 && (
+          <div className="hit-list">
+            {photoHits.map((hit) => (
+              <div className="hit" key={hit.discogs_id}>
+                {hit.thumb && <img src={hit.thumb} alt="" />}
+                <div className="hit-body">
+                  <div>{hit.title}</div>
+                  <div className="muted small">{[hit.year, hit.country, hit.label, hit.catno].filter(Boolean).join(" · ")}</div>
+                </div>
+                <button className="btn-small" onClick={() => add(hit)}>ADD</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

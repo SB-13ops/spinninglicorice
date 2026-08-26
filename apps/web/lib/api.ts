@@ -30,6 +30,22 @@ function handleStatus(status: number) {
   if (status === 401) onUnauthorized();
 }
 
+// Our API returns errors as {"detail": "..."}. Extract that for a clean
+// message instead of surfacing the raw JSON body (or nothing at all) to the
+// person using the app.
+async function errorMessage(response: Response, path: string): Promise<string> {
+  const text = await response.text().catch(() => "");
+  if (text) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed.detail === "string") return parsed.detail;
+    } catch {
+      // Not JSON — fall through to using the raw text below.
+    }
+  }
+  return text || `SpinningLicorice API ${response.status}: ${path}`;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     cache: "no-store",
@@ -37,7 +53,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   });
   if (!response.ok) {
     handleStatus(response.status);
-    throw new Error(`Burnt Jacket API ${response.status}: ${path}`);
+    throw new Error(await errorMessage(response, path));
   }
   return response.json();
 }
@@ -51,8 +67,24 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   });
   if (!response.ok) {
     handleStatus(response.status);
-    const text = await response.text();
-    throw new Error(text || `Burnt Jacket API ${response.status}: ${path}`);
+    throw new Error(await errorMessage(response, path));
+  }
+  return response.json();
+}
+
+// For multipart file uploads (e.g. photo identification). FormData sets its
+// own Content-Type with the correct multipart boundary, so we must NOT set
+// one ourselves the way apiPost does for JSON bodies.
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    handleStatus(response.status);
+    throw new Error(await errorMessage(response, path));
   }
   return response.json();
 }
@@ -70,8 +102,7 @@ export async function apiSend<T>(
   });
   if (!response.ok) {
     handleStatus(response.status);
-    const text = await response.text();
-    throw new Error(text || `Burnt Jacket API ${response.status}: ${path}`);
+    throw new Error(await errorMessage(response, path));
   }
   if (response.status === 204) return null;
   return response.json();

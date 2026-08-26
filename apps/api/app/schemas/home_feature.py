@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 
 class HomeFeatureUpdate(BaseModel):
-    feature_type: str = Field(pattern="^(album|artist|custom|default)$")
+    feature_type: str = Field(pattern="^(album|artist|custom|default|random)$")
     release_id: str | None = None
     artist_id: str | None = None
     custom_image_url: str | None = None

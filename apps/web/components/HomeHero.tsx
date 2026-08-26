@@ -4,7 +4,7 @@ import { useState } from "react";
 import FeaturePicker from "./FeaturePicker";
 
 export type Hero = {
-  type: "album" | "artist" | "custom" | "default";
+  type: "album" | "artist" | "random" | "custom" | "default";
   title: string;
   subtitle: string | null;
   image_url: string | null;
@@ -73,5 +73,6 @@ export default function HomeHero({
 function heroKicker(type: Hero["type"]): string {
   if (type === "album") return "Now featuring";
   if (type === "artist") return "Featured artist";
+  if (type === "random") return "🎲 Now spinning (random pick)";
   return "Featured";
 }

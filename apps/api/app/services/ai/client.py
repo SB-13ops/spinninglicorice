@@ -13,6 +13,7 @@ Three entry points:
 """
 from __future__ import annotations
 
+import base64
 import json
 import logging
 from dataclasses import dataclass, field
@@ -73,6 +74,47 @@ class AIClient:
             return _first_text(resp)
         except Exception as exc:
             logger.warning("AI completion failed: %s", exc)
+            return None
+
+    # -- structured extraction from an image -----------------------------------
+    def identify_image(
+        self, system: str, user_text: str, image_bytes: bytes, media_type: str, *, max_tokens: int = 512
+    ) -> dict | None:
+        """Ask the fast model to look at a photo and return a JSON object.
+
+        Used for record cover/label identification: less precise than a
+        barcode scan, so callers should treat the result as a best guess to
+        search with, not a confirmed match. Returns None on any failure
+        (disabled, network error, unparseable response) so callers fall back
+        to telling the person to try the barcode or add it by hand.
+        """
+        if not self.is_enabled:
+            return None
+        try:
+            image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+            resp = self._client.messages.create(
+                model=settings.ai_fast_model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {"type": "base64", "media_type": media_type, "data": image_b64},
+                            },
+                            {"type": "text", "text": user_text},
+                        ],
+                    }
+                ],
+            )
+            text = _first_text(resp)
+            if text is None:
+                return None
+            return _extract_json(text)
+        except Exception as exc:
+            logger.warning("AI image identification failed: %s", exc)
             return None
 
     # -- web-search-backed research ------------------------------------------

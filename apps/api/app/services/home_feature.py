@@ -15,11 +15,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.core import (
     Artist,
+    CollectionItem,
     HomeFeature,
     Release,
     ReleaseArtist,
@@ -42,6 +43,33 @@ def _release_artists(db: Session, release_id: uuid.UUID) -> list[str]:
             .where(ReleaseArtist.release_id == release_id)
         ).all()
     )
+
+
+def _random_pick(db: Session, owner_id: uuid.UUID) -> dict:
+    """Pick a different random record from the collection each time this is
+    called — the home feed calls resolve_home_feature() on every load, so
+    "random" naturally means a fresh pick each visit/login, with no need to
+    store or track which one was shown last."""
+    release_id = db.scalar(
+        select(CollectionItem.release_id)
+        .where(CollectionItem.user_id == owner_id, CollectionItem.status == "collection")
+        .order_by(func.random())
+        .limit(1)
+    )
+    if release_id is None:
+        # Empty collection -> nothing to randomize, fall back gracefully.
+        return dict(DEFAULT_HERO)
+    release = db.get(Release, release_id)
+    if release is None:
+        return dict(DEFAULT_HERO)
+    artists = _release_artists(db, release.id)
+    return {
+        "type": "random",
+        "title": release.title,
+        "subtitle": ", ".join(artists) if artists else None,
+        "image_url": release.image_url,
+        "ref_id": str(release.id),
+    }
 
 
 def resolve_home_feature(db: Session, owner_id: uuid.UUID) -> dict:
@@ -78,6 +106,9 @@ def resolve_home_feature(db: Session, owner_id: uuid.UUID) -> dict:
                 "image_url": image,
                 "ref_id": str(artist.id),
             }
+
+    if feature.feature_type == "random":
+        return _random_pick(db, owner_id)
 
     if feature.feature_type == "custom":
         return {
