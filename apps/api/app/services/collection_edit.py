@@ -183,19 +183,34 @@ def add_manual(
 
 # ---- add from a Discogs release id (after searching) -----------------------
 
-def search_discogs(db: Session, user_id: uuid.UUID, query: str, *, limit: int = 10) -> list[dict]:
-    """Search Discogs for releases matching free text. Requires the user to have
-    connected Discogs (uses their token). Returns lightweight candidates."""
-    from app.services.discogs_client import client_for_account
+def _discogs_client_for_user(db: Session, user_id: uuid.UUID):
+    """A Discogs client for read-only public endpoints (search, release
+    lookup) that works whether or not the person has connected their own
+    Discogs account. A connected account is used when available (better rate
+    limits), but it was never actually required for these endpoints — only
+    an app-level key/secret is, which is a server-side setting, not
+    something each person needs to set up. Only raises if the *server*
+    hasn't configured Discogs at all.
+    """
+    from app.services.discogs_client import DiscogsClient, client_for_account
+    from app.core.config import settings
 
     account = db.scalar(
         select(ExternalAccount).where(
             ExternalAccount.user_id == user_id, ExternalAccount.provider == "discogs"
         )
     )
-    if account is None:
-        raise RuntimeError("Connect your Discogs account first to search.")
-    client = client_for_account(account)
+    if account is not None:
+        return client_for_account(account)
+    if not settings.discogs_consumer_key or not settings.discogs_consumer_secret:
+        raise RuntimeError("Discogs isn't configured on this server yet.")
+    return DiscogsClient()
+
+
+def search_discogs(db: Session, user_id: uuid.UUID, query: str, *, limit: int = 10) -> list[dict]:
+    """Search Discogs for releases matching free text. Works standalone --
+    connecting a personal Discogs account is optional, not required."""
+    client = _discogs_client_for_user(db, user_id)
     payload = client.database_search(query=query, per_page=min(limit, 25), page=1)
     out = []
     for row in payload.get("results", [])[:limit]:
@@ -214,24 +229,16 @@ def search_discogs(db: Session, user_id: uuid.UUID, query: str, *, limit: int = 
 
 
 def search_discogs_by_barcode(db: Session, user_id: uuid.UUID, barcode: str, *, limit: int = 10) -> list[dict]:
-    """Look up Discogs releases by a scanned barcode (UPC/EAN). Requires a
-    connected Discogs account. Returns the same lightweight candidate shape as
-    the text search so the frontend can reuse one 'pick a match' UI."""
-    from app.services.discogs_client import client_for_account
-
+    """Look up Discogs releases by a scanned barcode (UPC/EAN). Works
+    standalone -- connecting a personal Discogs account is optional, not
+    required. Returns the same lightweight candidate shape as the text
+    search so the frontend can reuse one 'pick a match' UI."""
     # Barcodes are digits; strip spaces/hyphens a scanner might include.
     cleaned = "".join(ch for ch in barcode if ch.isdigit())
     if len(cleaned) < 6:
         raise ValueError("That doesn't look like a barcode.")
 
-    account = db.scalar(
-        select(ExternalAccount).where(
-            ExternalAccount.user_id == user_id, ExternalAccount.provider == "discogs"
-        )
-    )
-    if account is None:
-        raise RuntimeError("Connect your Discogs account first to scan.")
-    client = client_for_account(account)
+    client = _discogs_client_for_user(db, user_id)
 
     # A physical barcode can be printed as 12-digit UPC-A or 13-digit EAN-13
     # (EAN-13 is just UPC-A with a leading 0), and Discogs entries aren't
@@ -267,18 +274,13 @@ def search_discogs_by_barcode(db: Session, user_id: uuid.UUID, barcode: str, *, 
 
 
 def add_from_discogs(db: Session, user_id: uuid.UUID, discogs_release_id: int | str, **personal) -> CollectionItem:
-    """Import a specific Discogs release (reusing the sync importer) and add it."""
-    from app.services.discogs_client import client_for_account
+    """Import a specific Discogs release (reusing the sync importer) and add
+    it. Works standalone -- connecting a personal Discogs account is
+    optional, not required, since importing a public release by ID doesn't
+    need per-user access."""
     from app.services.discogs_sync import DiscogsSyncService
 
-    account = db.scalar(
-        select(ExternalAccount).where(
-            ExternalAccount.user_id == user_id, ExternalAccount.provider == "discogs"
-        )
-    )
-    if account is None:
-        raise RuntimeError("Connect your Discogs account first.")
-    client = client_for_account(account)
+    client = _discogs_client_for_user(db, user_id)
     sync = DiscogsSyncService(db, client)
     release, _created = sync._get_or_import_release(discogs_release_id)
     db.flush()

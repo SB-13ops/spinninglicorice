@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterator
 
+import requests
 from requests_oauthlib import OAuth1Session
 
 from app.core.config import settings
@@ -83,29 +84,50 @@ class DiscogsClient:
             token_secret=payload["oauth_token_secret"],
         )
 
-    def _session(self) -> OAuth1Session:
-        if not self.access_token or not self.access_token_secret:
-            raise RuntimeError("Discogs access token is required.")
-        session = OAuth1Session(
-            settings.discogs_consumer_key,
-            client_secret=settings.discogs_consumer_secret,
-            resource_owner_key=self.access_token,
-            resource_owner_secret=self.access_token_secret,
-        )
+    def _session(self) -> Any:
+        # With per-user tokens: full OAuth 1.0a, needed for anything touching
+        # a specific person's private data (their collection, wantlist,
+        # profile edits).
+        if self.access_token and self.access_token_secret:
+            session = OAuth1Session(
+                settings.discogs_consumer_key,
+                client_secret=settings.discogs_consumer_secret,
+                resource_owner_key=self.access_token,
+                resource_owner_secret=self.access_token_secret,
+            )
+            session.headers.update({"User-Agent": self._user_agent()})
+            return session
+        # Without per-user tokens: Discogs' public, read-only endpoints
+        # (searching the database, looking up a specific release) don't
+        # actually require a connected user account — they just need the
+        # app identified, via a plain key+secret pair rather than full OAuth.
+        # This is what lets barcode scanning, cover search, and adding a
+        # specific release work standalone, without asking someone to link
+        # their personal Discogs account first.
+        session = requests.Session()
         session.headers.update({"User-Agent": self._user_agent()})
         return session
 
+    def _is_app_level(self) -> bool:
+        return not (self.access_token and self.access_token_secret)
+
     def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-        # Discogs rate-limits authenticated calls (~60/min). On HTTP 429, honor
-        # the Retry-After header and retry a few times with backoff so a Hunt
-        # refresh degrades to "slower" rather than "failed".
+        # Discogs rate-limits authenticated calls (~60/min) and unauthenticated
+        # calls more strictly (~25/min). On HTTP 429, honor the Retry-After
+        # header and retry a few times with backoff so a Hunt refresh degrades
+        # to "slower" rather than "failed".
         import time
+
+        request_params = dict(params or {})
+        if self._is_app_level():
+            request_params["key"] = settings.discogs_consumer_key
+            request_params["secret"] = settings.discogs_consumer_secret
 
         attempts = 0
         while True:
             response = self._session().get(
                 f"{API_BASE_URL}{path}",
-                params=params,
+                params=request_params,
                 timeout=30,
             )
             if response.status_code == 429 and attempts < 3:
