@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { apiGet, apiPost, apiSend } from "../lib/api";
 import BarcodeScanner from "./BarcodeScanner";
 
@@ -56,16 +57,21 @@ function Stars({ value, onRate }: { value: number | null; onRate?: (n: number) =
 }
 
 export default function CollectionLive() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [summary, setSummary] = useState<any>({ records: 0, years: [], countries: [] });
   const [error, setError] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [tab, setTab] = useState<"manual" | "discogs" | "scan">("manual");
   const [editing, setEditing] = useState<string | null>(null);
+  const [q, setQ] = useState(searchParams.get("q") || "");
 
-  async function load() {
+  async function load(query?: string) {
     try {
-      const data = await apiGet<{ items: Item[]; summary: any }>("/collection");
+      const term = query !== undefined ? query : q;
+      const url = term.trim() ? `/collection?q=${encodeURIComponent(term.trim())}` : "/collection";
+      const data = await apiGet<{ items: Item[]; summary: any }>(url);
       setItems(data.items || []);
       setSummary(data.summary || {});
     } catch {
@@ -73,8 +79,15 @@ export default function CollectionLive() {
     }
   }
   useEffect(() => {
-    load();
+    load(searchParams.get("q") || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    router.replace(q.trim() ? `/collection?q=${encodeURIComponent(q.trim())}` : "/collection");
+    load(q);
+  }
 
   async function rate(id: string, n: number) {
     try {
@@ -97,6 +110,25 @@ export default function CollectionLive() {
         <div className="card metric"><span className="metric-value">{summary.years?.length || 0}</span><span className="metric-label">RELEASE YEARS</span></div>
         <div className="card metric"><span className="metric-value">{summary.countries?.length || 0}</span><span className="metric-label">COUNTRIES</span></div>
       </div>
+
+      <form onSubmit={submitSearch} className="collection-search-row">
+        <input
+          className="collection-search-input"
+          placeholder="Search your collection…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <button type="submit" className="btn light">SEARCH</button>
+        {q && (
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => { setQ(""); router.replace("/collection"); load(""); }}
+          >
+            clear
+          </button>
+        )}
+      </form>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
         <button className="btn greenbtn" onClick={() => setShowAdd((s) => !s)}>

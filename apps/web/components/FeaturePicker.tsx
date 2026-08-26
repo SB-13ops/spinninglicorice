@@ -9,7 +9,7 @@ type Options = {
   artists: Array<{ artist_id: string; name: string }>;
 };
 
-type Tab = "album" | "artist" | "custom" | "default";
+type Tab = "album" | "artist" | "random" | "custom" | "default";
 
 export default function FeaturePicker({
   onClose,
@@ -58,13 +58,13 @@ export default function FeaturePicker({
         </div>
 
         <div className="picker-tabs">
-          {(["album", "artist", "custom", "default"] as Tab[]).map((t) => (
+          {(["album", "artist", "random", "custom", "default"] as Tab[]).map((t) => (
             <button
               key={t}
               className={`picker-tab ${tab === t ? "active" : ""}`}
               onClick={() => setTab(t)}
             >
-              {t === "default" ? "Default" : t[0].toUpperCase() + t.slice(1)}
+              {t === "default" ? "Default" : t === "random" ? "🎲 Surprise me" : t[0].toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
@@ -154,6 +154,22 @@ export default function FeaturePicker({
               }
             >
               Save custom hero
+            </button>
+          </div>
+        )}
+
+        {tab === "random" && (
+          <div className="picker-custom">
+            <p className="share-hint">
+              Feature a different random record from your collection every time you visit —
+              a nice way to rediscover things you'd forgotten you own.
+            </p>
+            <button
+              className="btn-gold"
+              disabled={saving}
+              onClick={() => save({ feature_type: "random" })}
+            >
+              🎲 Use a random record each visit
             </button>
           </div>
         )}
