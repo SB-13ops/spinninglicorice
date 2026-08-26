@@ -19,6 +19,7 @@ from app.services.collection_edit import (
     update_item,
 )
 from app.services.photo_identify import identify_and_search
+from app.services.condition_grade import suggest_condition
 
 router = APIRouter(prefix="/collection", tags=["collection"])
 
@@ -280,5 +281,28 @@ async def identify_photo(
         raise HTTPException(status_code=400, detail="The uploaded photo was empty.")
     try:
         return identify_and_search(db, ctx.owner_id, data, file.content_type)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.post("/suggest-condition")
+async def suggest_condition_route(
+    file: UploadFile = File(...),
+    ctx=Depends(require_account_read),
+):
+    """Suggest a rough condition grade from a photo of a cover, jacket, or
+    label. Scoped deliberately: this never claims to assess the actual vinyl
+    playing surface, only what's visible in the photo. A suggestion to
+    confirm or override, not an authoritative grade.
+    """
+    if file.content_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Please upload a JPEG, PNG, or WebP photo.")
+    data = await file.read()
+    if len(data) > _MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=400, detail="That photo is too large (max 8MB).")
+    if not data:
+        raise HTTPException(status_code=400, detail="The uploaded photo was empty.")
+    try:
+        return suggest_condition(data, file.content_type)
     except RuntimeError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
