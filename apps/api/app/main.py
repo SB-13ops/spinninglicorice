@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routes import (
     auth,
+    board,
     collection,
     discogs,
     dna,
@@ -38,6 +39,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(home.router, prefix="/api/v1")
 app.include_router(home_feature.router, prefix="/api/v1")
 app.include_router(collection.router, prefix="/api/v1")
+app.include_router(board.router, prefix="/api/v1")
 app.include_router(hunter.router, prefix="/api/v1")
 app.include_router(dna.router, prefix="/api/v1")
 app.include_router(scout.router, prefix="/api/v1")
