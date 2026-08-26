@@ -207,11 +207,37 @@ def _discogs_client_for_user(db: Session, user_id: uuid.UUID):
     return DiscogsClient()
 
 
+def _call_discogs(fn, *args, **kwargs):
+    """Run a Discogs API call, translating any network/HTTP failure into a
+    clean RuntimeError instead of letting it crash uncaught. Without this,
+    something as ordinary as Discogs rate-limiting us, a timeout, or invalid
+    server-side credentials produced a raw, unhandled 500 — which browsers
+    render as an opaque network failure ("Load failed" in Safari) rather
+    than a readable message, even though the real cause was already known
+    at the point of failure.
+    """
+    import requests
+
+    try:
+        return fn(*args, **kwargs)
+    except requests.exceptions.HTTPError as exc:
+        status = exc.response.status_code if exc.response is not None else None
+        if status == 401:
+            raise RuntimeError("Discogs rejected the server's credentials. Check the Discogs API keys in settings.")
+        if status == 404:
+            raise RuntimeError("That release couldn't be found on Discogs.")
+        raise RuntimeError(f"Discogs returned an error (status {status}). Please try again.")
+    except requests.exceptions.Timeout:
+        raise RuntimeError("Discogs took too long to respond. Please try again.")
+    except requests.exceptions.RequestException:
+        raise RuntimeError("Couldn't reach Discogs right now. Please try again in a moment.")
+
+
 def search_discogs(db: Session, user_id: uuid.UUID, query: str, *, limit: int = 10) -> list[dict]:
     """Search Discogs for releases matching free text. Works standalone --
     connecting a personal Discogs account is optional, not required."""
     client = _discogs_client_for_user(db, user_id)
-    payload = client.database_search(query=query, per_page=min(limit, 25), page=1)
+    payload = _call_discogs(client.database_search, query=query, per_page=min(limit, 25), page=1)
     out = []
     for row in payload.get("results", [])[:limit]:
         out.append(
@@ -253,7 +279,7 @@ def search_discogs_by_barcode(db: Session, user_id: uuid.UUID, barcode: str, *, 
 
     payload: dict = {"results": []}
     for candidate in candidates:
-        payload = client.database_search(barcode=candidate, per_page=min(limit, 25), page=1)
+        payload = _call_discogs(client.database_search, barcode=candidate, per_page=min(limit, 25), page=1)
         if payload.get("results"):
             break
 
@@ -282,7 +308,7 @@ def add_from_discogs(db: Session, user_id: uuid.UUID, discogs_release_id: int | 
 
     client = _discogs_client_for_user(db, user_id)
     sync = DiscogsSyncService(db, client)
-    release, _created = sync._get_or_import_release(discogs_release_id)
+    release, _created = _call_discogs(sync._get_or_import_release, discogs_release_id)
     db.flush()
 
     target = personal.get("target", "collection")
