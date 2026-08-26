@@ -145,7 +145,7 @@ export default function CollectionLive() {
           </div>
           {tab === "manual" && <ManualForm onAdded={() => { setShowAdd(false); load(); }} onError={setError} />}
           {tab === "discogs" && <DiscogsSearch onAdded={() => { setShowAdd(false); load(); }} onError={setError} />}
-          {tab === "scan" && <BarcodeScanner onAdded={() => { setShowAdd(false); load(); }} onError={setError} />}
+          {tab === "scan" && <BarcodeScanner onAdded={() => { setShowAdd(false); load(); }} onRefresh={() => load()} onError={setError} />}
         </div>
       )}
 

@@ -15,6 +15,18 @@ type DiscogsHit = {
   thumb: string | null;
 };
 
+type BatchItem = {
+  id: string;
+  fileName: string;
+  previewUrl: string;
+  status: "waiting" | "checking barcode" | "looking up" | "identifying cover" | "done" | "error";
+  barcode: string | null;
+  identified: { artist: string | null; title: string | null; confidence: string; notes: string } | null;
+  hits: DiscogsHit[];
+  message: string;
+  added: boolean;
+};
+
 /**
  * Scan a record's barcode to find it on Discogs — either with the live camera
  * or by uploading a photo. The decoded barcode is looked up server-side
@@ -23,7 +35,15 @@ type DiscogsHit = {
  * Note: the live camera requires HTTPS (or localhost) and camera permission.
  * If the camera isn't available, the photo-upload path still works.
  */
-export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => void; onError: (s: string) => void }) {
+export default function BarcodeScanner({
+  onAdded,
+  onRefresh,
+  onError,
+}: {
+  onAdded: () => void;
+  onRefresh: () => void;
+  onError: (s: string) => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
@@ -43,6 +63,9 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
   } | null>(null);
   const [photoHits, setPhotoHits] = useState<DiscogsHit[]>([]);
   const [uploadBusy, setUploadBusy] = useState(false);
+
+  const [batch, setBatch] = useState<BatchItem[]>([]);
+  const [batchBusy, setBatchBusy] = useState(false);
 
   useEffect(() => {
     // Constrain to the barcode formats actually printed on record sleeves
@@ -217,6 +240,95 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
     }
   }
 
+  function updateBatchItem(id: string, patch: Partial<BatchItem>) {
+    setBatch((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  }
+
+  async function processBatchFiles(files: FileList) {
+    const MAX_BATCH = 5;
+    const fileArray = Array.from(files).slice(0, MAX_BATCH);
+    const skipped = files.length - fileArray.length;
+
+    const items: BatchItem[] = fileArray.map((f, i) => ({
+      id: `${Date.now()}-${i}`,
+      fileName: f.name,
+      previewUrl: URL.createObjectURL(f),
+      status: "waiting",
+      barcode: null,
+      identified: null,
+      hits: [],
+      message: "",
+      added: false,
+    }));
+    setBatch(items);
+    setBatchBusy(true);
+    if (skipped > 0) {
+      onError(`Only the first ${MAX_BATCH} photos are processed at once — ${skipped} were skipped.`);
+    }
+
+    // Processed one at a time, not in parallel: each photo may trigger a real
+    // AI call on the backend, and running five of those simultaneously would
+    // both be harder to show clear progress for and needlessly hammer the
+    // identification service all at once.
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      const id = items[i].id;
+      updateBatchItem(id, { status: "checking barcode" });
+
+      let decoded: string | null = null;
+      if (readerRef.current) {
+        const url = URL.createObjectURL(file);
+        try {
+          const result = await readerRef.current.decodeFromImageUrl(url);
+          decoded = result.getText();
+        } catch {
+          // no barcode in this photo — fine, we'll try AI identification below
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      }
+
+      if (decoded) {
+        updateBatchItem(id, { status: "looking up", barcode: decoded });
+        try {
+          const r = await apiGet<{ results: DiscogsHit[] }>(`/collection/scan?barcode=${encodeURIComponent(decoded)}`);
+          if (r.results.length) {
+            updateBatchItem(id, { status: "done", hits: r.results });
+            continue;
+          }
+          // barcode read fine, but no Discogs match -- fall through to AI below
+        } catch (e) {
+          updateBatchItem(id, { status: "error", message: (e as Error).message });
+          continue;
+        }
+      }
+
+      updateBatchItem(id, { status: "identifying cover" });
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await apiUpload<{
+          identified: { artist: string | null; title: string | null; confidence: string; notes: string };
+          results: DiscogsHit[];
+        }>("/collection/identify-photo", formData);
+        updateBatchItem(id, { status: "done", identified: res.identified, hits: res.results });
+      } catch (e) {
+        updateBatchItem(id, { status: "error", message: (e as Error).message });
+      }
+    }
+    setBatchBusy(false);
+  }
+
+  async function addFromBatchItem(itemId: string, hit: DiscogsHit) {
+    try {
+      await apiPost("/collection/from-discogs", { discogs_release_id: hit.discogs_id, target });
+      updateBatchItem(itemId, { added: true });
+      onRefresh();
+    } catch (e) {
+      onError((e as Error).message);
+    }
+  }
+
   return (
     <div className="add-form">
       <div className="target-toggle">
@@ -259,6 +371,76 @@ export default function BarcodeScanner({ onAdded, onError }: { onAdded: () => vo
 
       {barcode && <div className="muted small">Barcode: {barcode}</div>}
       {status && <div className="muted small">{status}</div>}
+
+      <div className="scan-divider">
+        <span>adding several at once?</span>
+      </div>
+
+      <div className="muted small">
+        Upload up to 5 photos together — covers work best; a label photo works too if there's no
+        sleeve. Each one gets scanned for a barcode first, then AI cover ID if that doesn't find a match.
+      </div>
+      <label className="btn light" style={{ cursor: batchBusy ? "default" : "pointer", marginTop: 8 }}>
+        {batchBusy ? "PROCESSING…" : "UPLOAD 2–5 PHOTOS"}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          style={{ display: "none" }}
+          disabled={batchBusy}
+          onChange={(e) => e.target.files && e.target.files.length > 0 && processBatchFiles(e.target.files)}
+        />
+      </label>
+
+      {batch.length > 0 && (
+        <div className="batch-list">
+          {batch.map((item) => (
+            <div className="batch-item" key={item.id}>
+              <img src={item.previewUrl} alt="" className="batch-thumb" />
+              <div className="batch-body">
+                <div className="muted small">{item.fileName}</div>
+
+                {item.status !== "done" && item.status !== "error" && (
+                  <div className="muted small">{item.status}…</div>
+                )}
+                {item.status === "error" && <div className="muted small">Couldn't process this one: {item.message}</div>}
+
+                {item.status === "done" && item.identified && !item.identified.artist && !item.identified.title && (
+                  <div className="muted small">
+                    No barcode and couldn't identify the cover{item.identified.notes ? ` — ${item.identified.notes}` : "."}
+                  </div>
+                )}
+                {item.status === "done" && item.identified?.artist && (
+                  <div className="muted small">
+                    AI thinks: <strong>{[item.identified.artist, item.identified.title].filter(Boolean).join(" — ")}</strong>
+                    {" "}({item.identified.confidence})
+                  </div>
+                )}
+
+                {item.added && <div className="muted small">✓ Added</div>}
+
+                {!item.added && item.hits.length > 0 && (
+                  <div className="hit-list">
+                    {item.hits.slice(0, 3).map((hit) => (
+                      <div className="hit" key={hit.discogs_id}>
+                        {hit.thumb && <img src={hit.thumb} alt="" />}
+                        <div className="hit-body">
+                          <div>{hit.title}</div>
+                          <div className="muted small">{[hit.year, hit.country, hit.label].filter(Boolean).join(" · ")}</div>
+                        </div>
+                        <button className="btn-small" onClick={() => addFromBatchItem(item.id, hit)}>ADD</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {item.status === "done" && !item.added && item.hits.length === 0 && item.barcode && (
+                  <div className="muted small">Found a barcode, but no Discogs match for it.</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="hit-list">
         {hits.map((hit) => (
