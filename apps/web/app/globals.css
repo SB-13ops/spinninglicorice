@@ -39,7 +39,7 @@ html[data-theme="dark"]{
 html[data-theme="dark"] .search{background:#11100d}
 html[data-theme="dark"] .search::placeholder{color:#c5b79e}
 html[data-theme="dark"] .chip{background:#17140f}
-html[data-theme="dark"] .nav-item:hover,.nav-item.active{background:linear-gradient(90deg,#4a3319,#2d2114)}
+html[data-theme="dark"] .nav-item:hover,html[data-theme="dark"] .nav-item.active{background:linear-gradient(90deg,#4a3319,#2d2114)}
 html[data-theme="dark"] .nav-icon{color:#e8c177}
 html[data-theme="dark"] .footer{color:#d7a65e}
 html[data-theme="dark"] .card{background:linear-gradient(180deg,var(--panel2),#12100d)}
@@ -67,7 +67,7 @@ html[data-theme="dark"] .auth-btn:hover{background:#1e1a12}
 html[data-theme="dark"] .auth-error{background:#3a1c1a;color:#f2cdcb}
 html[data-theme="dark"] .auth-fine{color:#8a7c64}
 html[data-theme="dark"] .account-select{background:#11100d}
-html[data-theme="dark"] .share-row select,.share-list select{background:#11100d}
+html[data-theme="dark"] .share-row select,html[data-theme="dark"] .share-list select{background:#11100d}
 html[data-theme="dark"] .btn-small{background:#17140f}
 html[data-theme="dark"] .btn-danger{color:#e5a9a6}
 html[data-theme="dark"] .share-link{background:#0e0d0a;color:var(--gold)}
@@ -90,12 +90,12 @@ html[data-theme="dark"] .ai-result{background:#13101a;border:1px solid #33265a}
 html[data-theme="dark"] .ai-cites a{color:#8ab4f8}
 html[data-theme="dark"] .ai-disclosure{color:#8a7c64;background:rgba(9,8,6,.92);border-top:1px solid #1f1810}
 html[data-theme="dark"] .trip-panel{background:#12100b}
-html[data-theme="dark"] .trip-controls select,.trip-controls input{background:#0e0d0a}
+html[data-theme="dark"] .trip-controls select,html[data-theme="dark"] .trip-controls input{background:#0e0d0a}
 html[data-theme="dark"] .trip-note{color:#8a7c64}
 html[data-theme="dark"] .delta-up{color:#7fce7f}
 html[data-theme="dark"] .delta-down{color:#d98a6a}
 html[data-theme="dark"] .completion-bar{background:#1c1710}
-html[data-theme="dark"] .add-form input,.add-form select,.add-form textarea{background:#0e0d0a}
+html[data-theme="dark"] .add-form input,html[data-theme="dark"] .add-form select,html[data-theme="dark"] .add-form textarea{background:#0e0d0a}
 html[data-theme="dark"] .hit{background:#12100b}
 html[data-theme="dark"] .star{color:#4a3f2c}
 html[data-theme="dark"] .tgl{background:#0e0d0a}
@@ -116,7 +116,7 @@ body{overflow-x:auto}
 .app-shell{
   min-height:100vh;
   display:grid;
-  grid-template-columns:206px minmax(820px,1fr);
+  grid-template-columns:230px minmax(820px,1fr);
   grid-template-rows:94px 1fr 48px;
   background:
     radial-gradient(circle at 55% 30%,rgba(79,57,30,.10),transparent 35%),
@@ -127,11 +127,11 @@ body{overflow-x:auto}
   grid-column:1/-1;
   border-bottom:1px solid #251d13;
   display:grid;
-  grid-template-columns:206px 1fr;
+  grid-template-columns:230px 1fr;
   align-items:center;
 }
 .brand{padding-left:29px;min-width:0;overflow:hidden;pointer-events:none}
-.logo{font:900 17px Georgia,serif;letter-spacing:0;white-space:nowrap}
+.logo{font:900 15px Georgia,serif;letter-spacing:0;white-space:nowrap}
 .hamburger{display:none;background:none;border:none;font-size:22px;color:var(--cream);cursor:pointer;padding:0 14px}
 .tagline{font-size:11px;margin-top:5px}
 .top-main{display:flex;align-items:center;gap:16px;padding:0 28px}
