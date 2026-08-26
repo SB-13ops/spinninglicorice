@@ -12,6 +12,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        {/* Applies a saved dark-mode choice before first paint, so there's no
+            flash of the light theme for people who picked dark. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('spinninglicorice.theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}",
+          }}
+        />
         {/* Loaded at runtime in the browser, not at Next.js build time — this
             keeps the build itself free of any dependency on reaching Google's
             font servers. */}
