@@ -9,6 +9,7 @@ const ERRORS: Record<string, string> = {
   access_denied: "Sign-in was cancelled.",
   provider_error: "We couldn't complete sign-in with that provider. Please try again.",
   inactive: "This account is inactive.",
+  expired_state: "That sign-in attempt expired. Please try again.",
 };
 
 function AuthCard() {
