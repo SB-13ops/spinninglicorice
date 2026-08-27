@@ -98,6 +98,13 @@ export default function BoardLive() {
         <h1>Collector Board</h1>
         <p className="muted">Trade with, or find records from, other SpinningLicorice collectors.</p>
       </div>
+
+      <div className="board-welcome">
+        👋 <strong>Welcome to the Collector Board.</strong> Mark a record in your collection as{" "}
+        <strong>Open to Trade</strong>, or something on your wantlist as <strong>Looking For</strong> — it'll show up
+        here for every SpinningLicorice collector to see. Comment on a posting to start a conversation.
+      </div>
+
       {error && <div className="error">{error}</div>}
 
       <div className="board-controls">
