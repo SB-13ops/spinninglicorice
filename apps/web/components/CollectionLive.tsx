@@ -67,6 +67,16 @@ export default function CollectionLive() {
   const [tab, setTab] = useState<"manual" | "discogs" | "scan">("manual");
   const [editing, setEditing] = useState<string | null>(null);
   const [q, setQ] = useState(searchParams.get("q") || "");
+  const [postedToBoard, setPostedToBoard] = useState<Set<string>>(new Set());
+
+  async function postToTrade(itemId: string) {
+    try {
+      await apiPost("/board/trade", { collection_item_id: itemId });
+      setPostedToBoard((prev) => new Set(prev).add(itemId));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   async function load(query?: string) {
     try {
@@ -190,6 +200,13 @@ export default function CollectionLive() {
                     {item.purchase_price != null && <span className="badge">${item.purchase_price.toFixed(0)}</span>}
                     <span className="badge">{item.source.toUpperCase()}</span>
                   </div>
+                  {postedToBoard.has(item.collection_item_id) ? (
+                    <div className="muted small">✓ Posted to the board</div>
+                  ) : (
+                    <button className="link-btn" onClick={() => postToTrade(item.collection_item_id)}>
+                      📋 open to trade
+                    </button>
+                  )}
                 </>
               )}
             </div>

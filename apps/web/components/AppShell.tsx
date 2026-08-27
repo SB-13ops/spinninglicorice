@@ -15,6 +15,7 @@ const nav = [
   ["/dna", "⚯", "DNA"],
   ["/insights", "$", "INSIGHTS"],
   ["/groups", "⚑", "GROUPS"],
+  ["/board", "☍", "BOARD"],
   ["/sharing", "⇄", "SHARING"],
   ["/profile", "♙", "PROFILE"],
 ];
