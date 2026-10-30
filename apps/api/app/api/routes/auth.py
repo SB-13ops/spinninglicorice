@@ -104,6 +104,7 @@ def set_payment_handles(
 # Social login (Google / Facebook)
 # ---------------------------------------------------------------------------
 import secrets as _secrets  # noqa: E402
+from urllib.parse import urlencode  # noqa: E402
 
 from fastapi import Request  # noqa: E402
 from fastapi.responses import RedirectResponse  # noqa: E402
@@ -111,7 +112,18 @@ from fastapi.responses import RedirectResponse  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.core.oauth_state import get_login_state_store  # noqa: E402
 from app.services.oauth_providers import get_provider  # noqa: E402
-from app.services.social_auth import find_or_create_user  # noqa: E402
+from app.services.social_auth import EmailInUseError, find_or_create_user  # noqa: E402
+
+
+def _safe_redirect_path(path: str) -> str:
+    """Keep the post-login destination on the web app.
+
+    A bare leading "/" isn't enough: browsers treat "//host" and "/\\host" as
+    links to another site, which would turn login into an open redirect.
+    """
+    if not path.startswith("/") or path.startswith("//") or path.startswith("/\\"):
+        return "/"
+    return path
 
 
 def _redirect_uri(provider: str) -> str:
@@ -133,8 +145,7 @@ def social_login(provider: str, redirect_path: str = "/"):
             status_code=503,
             detail=f"{provider.title()} login is not configured on this server.",
         )
-    if not redirect_path.startswith("/"):
-        redirect_path = "/"
+    redirect_path = _safe_redirect_path(redirect_path)
     state = _secrets.token_urlsafe(24)
     get_login_state_store().put(state, redirect_path)
     return RedirectResponse(url=p.authorize_url(state, _redirect_uri(provider)))
@@ -178,12 +189,15 @@ def social_callback(
     except Exception:
         return RedirectResponse(url=f"{web}/login?error=provider_error")
 
-    user = find_or_create_user(db, profile)
+    try:
+        user = find_or_create_user(db, profile)
+    except EmailInUseError:
+        return RedirectResponse(url=f"{web}/login?error=email_in_use")
     if not user.is_active:
         return RedirectResponse(url=f"{web}/login?error=inactive")
 
     token = create_access_token(subject=user.id)
     # Hand the token to the web app via the URL fragment; the login page reads
     # it and stores it. (Fragment isn't sent to servers / logged in referers.)
-    sep = "" if redirect_path.startswith("/") else "/"
-    return RedirectResponse(url=f"{web}/login/callback#token={token}&next={sep}{redirect_path}")
+    fragment = urlencode({"token": token, "next": _safe_redirect_path(redirect_path)})
+    return RedirectResponse(url=f"{web}/login/callback#{fragment}")

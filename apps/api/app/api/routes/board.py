@@ -29,6 +29,14 @@ class CommentCreate(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
 
 
+def _require_owner(ctx) -> None:
+    # Board posts and comments are public and shown under the poster's name.
+    # A shared-account admin acting on the owner's account would otherwise post
+    # as the owner, so posting/removing is limited to the owner themselves.
+    if not ctx.is_owner:
+        raise HTTPException(status_code=403, detail="Only the account owner can post to the board.")
+
+
 def _log_and_fail(exc: Exception, action: str) -> HTTPException:
     # Without this, any unexpected backend error (a missing table because a
     # migration hasn't run, a bad query, anything) previously propagated as a
@@ -75,6 +83,7 @@ def post_trade(
     ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
+    _require_owner(ctx)
     try:
         post = board_service.create_trade_post(db, ctx.owner_id, payload.collection_item_id, payload.note)
     except ValueError as exc:
@@ -90,6 +99,7 @@ def post_looking_for(
     ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
+    _require_owner(ctx)
     try:
         post = board_service.create_looking_for_post(db, ctx.owner_id, payload.wantlist_item_id, payload.note)
     except ValueError as exc:
@@ -105,6 +115,7 @@ def delete_post(
     ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
+    _require_owner(ctx)
     try:
         found = board_service.remove_post(db, ctx.owner_id, post_id)
     except Exception as exc:
@@ -133,6 +144,7 @@ def post_comment(
     ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
+    _require_owner(ctx)
     try:
         return board_service.add_comment(db, ctx.owner_id, post_id, payload.message)
     except ValueError as exc:

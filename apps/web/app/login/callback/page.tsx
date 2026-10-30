@@ -28,7 +28,12 @@ export default function LoginCallbackPage() {
       return;
     }
     setToken(token);
-    const dest = next.startsWith("/") ? next : "/";
+    // "//host" and "/\host" are treated by browsers as other sites, so only
+    // a single leading slash counts as an in-app path.
+    const dest =
+      next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")
+        ? next
+        : "/";
     // A client-side transition, not a hard page reload. setToken() already
     // updated the in-memory auth state, so this keeps that state alive
     // directly rather than depending on a fresh page load re-reading

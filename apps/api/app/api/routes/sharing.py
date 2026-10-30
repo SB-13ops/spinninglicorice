@@ -15,6 +15,7 @@ can_manage_sharing.
 from __future__ import annotations
 
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -133,7 +134,7 @@ def list_invites(
 
 @router.delete("/invites/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_invite(
-    invite_id: str,
+    invite_id: uuid.UUID,
     ctx: AccountContext = Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
@@ -219,7 +220,7 @@ def list_members(
 
 @router.patch("/members/{member_id}", response_model=MemberOut)
 def update_member_role(
-    member_id: str,
+    member_id: uuid.UUID,
     payload: MemberRoleUpdate,
     ctx: AccountContext = Depends(require_account_write),
     db: Session = Depends(get_db),
@@ -246,7 +247,7 @@ def update_member_role(
 
 @router.delete("/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_member(
-    member_id: str,
+    member_id: uuid.UUID,
     ctx: AccountContext = Depends(require_account_write),
     db: Session = Depends(get_db),
 ):

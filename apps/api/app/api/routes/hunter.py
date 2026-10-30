@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from uuid import UUID
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_account_read, require_account_write
+from app.api.deps import get_current_user, require_account_read, require_account_write
 from app.db.deps import get_db
 from app.models.core import ExternalAccount, Hunt, HuntCriteria, HuntResult, MarketListing, User
 from app.schemas.hunter import HuntCreate, HuntParseRequest, HuntUpdate
@@ -15,6 +17,7 @@ from app.services.ai.hunt_parser_ai import parse_hunt_query_smart as parse_hunt_
 from app.services.hunter_score import ScoreInput, calculate_spinninglicorice_score
 
 router = APIRouter(prefix="/hunter", tags=["hunter"])
+logger = logging.getLogger(__name__)
 
 def _serialize_hunt(hunt: Hunt, criteria: HuntCriteria | None) -> dict:
     return {
@@ -28,7 +31,8 @@ def _serialize_hunt(hunt: Hunt, criteria: HuntCriteria | None) -> dict:
     }
 
 @router.post("/parse")
-def parse_hunt(request: HuntParseRequest):
+def parse_hunt(request: HuntParseRequest, current_user: User = Depends(get_current_user)):
+    # Authenticated because parsing may call the paid AI API.
     return {"query": request.query, "criteria": parse_hunt_query(request.query)}
 
 @router.get("/hunts")
@@ -137,12 +141,11 @@ def refresh_hunt(hunt_id: UUID, ctx = Depends(require_account_write),
     # Prefer the real Discogs provider whenever a user has connected Discogs.
     if discogs_account:
         try:
-            opportunities = DiscogsHunterProvider(db, user=user).search(criteria, limit=12)
-        except Exception as exc:
+            owner = db.get(User, ctx.owner_id)
+            opportunities = DiscogsHunterProvider(db, user=owner).search(criteria, limit=12)
+        except Exception:
+            logger.exception("Discogs hunter search failed for hunt %s", hunt.id)
             opportunities = []
-            provider_error = str(exc)
-        else:
-            provider_error = None
 
         for opp in opportunities:
             # Discogs returns a real release-level marketplace floor and count.
@@ -152,7 +155,9 @@ def refresh_hunt(hunt_id: UUID, ctx = Depends(require_account_write),
 
             listing = MarketListing(
                 source="discogs_market",
-                external_listing_id=f"release-{opp.discogs_release_id}",
+                # Scoped to the hunt (like the demo path) so two hunts that
+                # surface the same release don't collide on uq_market_listing.
+                external_listing_id=f"{hunt.id}-release-{opp.discogs_release_id}",
                 release_id=opp.spinninglicorice_release_id,
                 title_raw=f"{opp.artist} — {opp.title}",
                 price=opp.current_lowest_price,

@@ -36,7 +36,7 @@ def public_collection(token: str, db: Session = Depends(get_db)):
     owner_id = _resolve_owner_id(token, db)
     from app.api.routes.collection import _serialize_collection  # lazy to avoid cycle
 
-    return _serialize_collection(db, owner_id)
+    return _serialize_collection(db, owner_id, public=True)
 
 
 @router.get("/{token}/dna")
@@ -50,4 +50,4 @@ def public_home(token: str, db: Session = Depends(get_db)):
     owner_id = _resolve_owner_id(token, db)
     from app.api.routes.home import _build_home_feed  # lazy to avoid cycle
 
-    return _build_home_feed(db, owner_id)
+    return _build_home_feed(db, owner_id, public=True)

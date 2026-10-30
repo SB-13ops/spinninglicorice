@@ -7,6 +7,7 @@ promoted) can manage members, invites, and settings.
 from __future__ import annotations
 
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -235,11 +236,11 @@ def list_group_members(
 
 @router.delete("/{group_id}/members/{user_id}", status_code=204)
 def remove_member(
-    user_id: str,
+    user_id: uuid.UUID,
     ctx: GroupContext = Depends(require_group_admin),
     db: Session = Depends(get_db),
 ):
-    if str(ctx.user.id) == user_id:
+    if ctx.user.id == user_id:
         raise HTTPException(status_code=400, detail="Use 'leave' to remove yourself.")
     membership = db.scalar(
         select(GroupMembership).where(

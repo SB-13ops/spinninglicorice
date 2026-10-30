@@ -30,9 +30,11 @@ def _serialize_collection(
     q: str | None = None,
     year: int | None = None,
     country: str | None = None,
+    public: bool = False,
 ) -> dict:
     """Build the collection payload for an account. Shared by the authenticated
-    route and the anonymous public read endpoint."""
+    route and the anonymous public read endpoint; `public` omits the owner's
+    private fields (what they paid, their notes)."""
     stmt = (
         select(CollectionItem, Release)
         .join(Release, CollectionItem.release_id == Release.id)
@@ -86,6 +88,10 @@ def _serialize_collection(
         }
         for item, release in rows
     ]
+    if public:
+        for x in items:
+            x.pop("purchase_price")
+            x.pop("personal_notes")
 
     return {
         "items": items,
@@ -169,7 +175,7 @@ def add_record(
 @router.get("/search")
 def search_records(
     q: str = Query(min_length=1),
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
     """Search Discogs for a release to add (requires a connected Discogs account)."""
@@ -182,7 +188,7 @@ def search_records(
 @router.get("/scan")
 def scan_barcode(
     barcode: str = Query(min_length=6, max_length=32),
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
     """Look up a scanned barcode (UPC/EAN) on Discogs and return candidate
@@ -263,7 +269,7 @@ _MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8MB
 @router.post("/identify-photo")
 async def identify_photo(
     file: UploadFile = File(...),
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
     """Identify a record from a photo of its cover or label (AI, best-effort),
@@ -288,7 +294,7 @@ async def identify_photo(
 @router.post("/suggest-condition")
 async def suggest_condition_route(
     file: UploadFile = File(...),
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
 ):
     """Suggest a rough condition grade from a photo of a cover, jacket, or
     label. Scoped deliberately: this never claims to assess the actual vinyl
