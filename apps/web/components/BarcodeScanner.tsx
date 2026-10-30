@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { apiGet, apiPost, apiUpload } from "../lib/api";
+import { loadImage, prepareForUpload, readBarcode } from "../lib/photo";
 
 type DiscogsHit = {
   discogs_id: number;
@@ -123,7 +124,10 @@ export default function BarcodeScanner({
         // exactly like "the camera works but never scans anything," since
         // the user is pointing the back of the phone at the barcode while
         // the front camera captures their face instead.
-        { video: { facingMode: { ideal: "environment" } } },
+        //
+        // Also ask for HD: left to the default, many phones stream 640x480,
+        // which is too coarse for ZXing to resolve barcode bars.
+        { video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
         videoRef.current,
         (result, _err, controls) => {
           if (result) {
@@ -152,20 +156,18 @@ export default function BarcodeScanner({
     setStatus("");
     setHits([]);
     setBarcode(null);
-    if (!readerRef.current) return;
     setUploadBusy(true);
     try {
-      const url = URL.createObjectURL(file);
-      let decoded: string | null = null;
+      let img: HTMLImageElement;
       try {
-        const result = await readerRef.current.decodeFromImageUrl(url);
-        decoded = result.getText();
-      } catch {
-        // No barcode readable in the photo — not an error, just means this is
-        // probably a cover/label shot, so we try AI identification below.
-      } finally {
-        URL.revokeObjectURL(url);
+        img = await loadImage(file);
+      } catch (e) {
+        onError((e as Error).message);
+        return;
       }
+      // No barcode in the photo isn't an error — it's probably a cover/label
+      // shot, so we try AI identification below.
+      const decoded = await readBarcode(img, readerRef.current);
 
       if (decoded) {
         setBarcode(decoded);
@@ -192,7 +194,7 @@ export default function BarcodeScanner({
       // One photo, two detection methods: barcode first (fast, exact), then
       // AI cover/label recognition as the automatic fallback — no separate
       // button needed, since "Scan" should just work either way.
-      await identifyPhoto(file);
+      await identifyPhoto(img);
       setStatus("");
     } finally {
       setUploadBusy(false);
@@ -220,13 +222,13 @@ export default function BarcodeScanner({
     }
   }
 
-  async function identifyPhoto(file: File) {
+  async function identifyPhoto(img: HTMLImageElement) {
     setPhotoBusy(true);
     setPhotoIdentified(null);
     setPhotoHits([]);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await prepareForUpload(img));
       const res = await apiUpload<{
         identified: { artist: string | null; title: string | null; confidence: string; notes: string };
         results: DiscogsHit[];
@@ -275,18 +277,15 @@ export default function BarcodeScanner({
       const id = items[i].id;
       updateBatchItem(id, { status: "checking barcode" });
 
-      let decoded: string | null = null;
-      if (readerRef.current) {
-        const url = URL.createObjectURL(file);
-        try {
-          const result = await readerRef.current.decodeFromImageUrl(url);
-          decoded = result.getText();
-        } catch {
-          // no barcode in this photo — fine, we'll try AI identification below
-        } finally {
-          URL.revokeObjectURL(url);
-        }
+      let img: HTMLImageElement;
+      try {
+        img = await loadImage(file);
+      } catch (e) {
+        updateBatchItem(id, { status: "error", message: (e as Error).message });
+        continue;
       }
+      // no barcode in this photo is fine — we'll try AI identification below
+      const decoded = await readBarcode(img, readerRef.current);
 
       if (decoded) {
         updateBatchItem(id, { status: "looking up", barcode: decoded });
@@ -306,7 +305,7 @@ export default function BarcodeScanner({
       updateBatchItem(id, { status: "identifying cover" });
       try {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", await prepareForUpload(img));
         const res = await apiUpload<{
           identified: { artist: string | null; title: string | null; confidence: string; notes: string };
           results: DiscogsHit[];

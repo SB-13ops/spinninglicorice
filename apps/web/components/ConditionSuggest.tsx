@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiUpload } from "../lib/api";
+import { loadImage, prepareForUpload } from "../lib/photo";
 
 type Suggestion = { suggested_grade: string | null; observations: string; confidence: string };
 
@@ -27,7 +28,7 @@ export default function ConditionSuggest({
     setResult(null);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await prepareForUpload(await loadImage(file)));
       const res = await apiUpload<Suggestion>("/collection/suggest-condition", formData);
       setResult(res);
     } catch (e) {
