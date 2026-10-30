@@ -10,6 +10,8 @@ const ERRORS: Record<string, string> = {
   provider_error: "We couldn't complete sign-in with that provider. Please try again.",
   inactive: "This account is inactive.",
   expired_state: "That sign-in attempt expired. Please try again.",
+  email_in_use:
+    "An account with this email already exists, and the provider couldn't confirm the email is yours. Sign in with your email and password instead.",
 };
 
 function AuthCard() {

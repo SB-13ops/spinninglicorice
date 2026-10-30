@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_account_read
+from app.api.deps import require_account_read, require_account_write
 from app.db.deps import get_db
 from app.models.core import Event, ScoutRecommendation, UserPreference
 from app.services.trip_planner import build_trip_plan
@@ -60,7 +60,7 @@ def get_trip_defaults(ctx=Depends(require_account_read), db: Session = Depends(g
 @router.put("/defaults", response_model=TripDefaults)
 def set_trip_defaults(
     payload: TripDefaults,
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
     prefs = _get_prefs(db, ctx.owner_id)
@@ -87,7 +87,8 @@ class PlanRequest(BaseModel):
 def plan_trip(
     recommendation_id: str,
     payload: PlanRequest,
-    ctx=Depends(require_account_read),
+    # Write access: planning can run paid AI web searches on the owner's behalf.
+    ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
     try:

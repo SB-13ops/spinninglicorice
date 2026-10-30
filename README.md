@@ -18,3 +18,14 @@ Copy `.env.example` to `.env` (and `apps/web/.env.local.example` to
 `apps/web/.env.local`) and fill in credentials before running locally.
 
 Before a production launch, work through `docs/PRE_LAUNCH_CHECKLIST.md`.
+
+## Running the API tests
+
+The tests need an empty Postgres database (it is wiped between tests) with the
+`pgcrypto` and `vector` extensions available:
+
+```bash
+cd apps/api
+pip install -r requirements.txt pytest
+TEST_DATABASE_URL=postgresql://user:pass@localhost:5432/spinninglicorice_test pytest
+```

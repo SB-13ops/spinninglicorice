@@ -5,7 +5,8 @@
                                              (user-initiated; costs a search).
 * POST /ai/pressing/research              - web-search briefing for a pressing.
 
-Enrichment endpoints require account read access and only run when the server
+Enrichment endpoints require account write access (they spend the owner's paid
+web searches, so read-only viewers can't trigger them) and only run when the server
 has an Anthropic key configured; otherwise they return 503 so the UI can hide
 or disable the button.
 """
@@ -18,7 +19,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_account_read
+from app.api.deps import require_account_write
 from app.db.deps import get_db
 from app.models.core import Event, ReleaseArtist, Artist, ScoutRecommendation
 from app.services.ai.client import get_ai
@@ -35,7 +36,7 @@ def ai_status():
 @router.post("/scout/{recommendation_id}/enrich")
 def enrich_scout(
     recommendation_id: str,
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
     db: Session = Depends(get_db),
 ):
     if not get_ai().is_enabled:
@@ -78,7 +79,7 @@ class PressingRequest(BaseModel):
 @router.post("/pressing/research")
 def pressing_research(
     payload: PressingRequest,
-    ctx=Depends(require_account_read),
+    ctx=Depends(require_account_write),
 ):
     if not get_ai().is_enabled:
         raise HTTPException(status_code=503, detail="AI features are not configured.")

@@ -8,7 +8,11 @@ INSECURE_TOKEN_KEY = "dev-insecure-token-key-change-me-0000000000="
 
 
 class Settings(BaseSettings):
-    app_env: str = "development"
+    # Defaults to production so a deploy that forgets APP_ENV gets the
+    # insecure-secret checks and no dev routes, rather than silently running
+    # with the well-known dev JWT secret. Local dev sets APP_ENV=development
+    # (see .env.example).
+    app_env: str = "production"
     app_name: str = "SpinningLicorice"
     database_url: str = "postgresql+psycopg://spinninglicorice:spinninglicorice@localhost:5432/spinninglicorice"
 

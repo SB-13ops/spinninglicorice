@@ -20,7 +20,7 @@ from app.services.home_feature import resolve_home_feature
 
 router = APIRouter(prefix="/home", tags=["home"])
 
-def _build_home_feed(db: Session, owner_id) -> dict:
+def _build_home_feed(db: Session, owner_id, public: bool = False) -> dict:
     """Build the home feed for an account. Shared by the authenticated route
     and the anonymous public read endpoint."""
     record_count = db.scalar(
@@ -79,7 +79,8 @@ def _build_home_feed(db: Session, owner_id) -> dict:
             "reason": rec.reason,
         }
 
-    notes = db.execute(
+    # Notifications are private to the account, so the public view omits them.
+    notes = [] if public else db.execute(
         select(Notification)
         .where(Notification.user_id == owner_id)
         .order_by(Notification.created_at.desc())

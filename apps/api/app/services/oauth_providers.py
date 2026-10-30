@@ -27,6 +27,9 @@ class SocialProfile:
     subject: str          # the provider's stable unique user id
     email: str | None
     name: str | None
+    # Whether the provider vouches that the user controls `email`. Only a
+    # verified email may be used to link to an existing account.
+    email_verified: bool = False
 
 
 class OAuthProvider:
@@ -95,6 +98,7 @@ class GoogleProvider(OAuthProvider):
             subject=str(data["sub"]),
             email=data.get("email"),
             name=data.get("name"),
+            email_verified=data.get("email_verified") is True,
         )
 
 
@@ -118,6 +122,8 @@ class FacebookProvider(OAuthProvider):
             subject=str(data["id"]),
             email=data.get("email"),
             name=data.get("name"),
+            # The Graph API only returns an email the user has confirmed.
+            email_verified=bool(data.get("email")),
         )
 
 
